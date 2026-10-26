@@ -1,0 +1,8 @@
+{
+  "id": "bravebrand.hire",
+  "name": "BraveBrand Team",
+  "apiVersion": 1,
+  "description": "Hire your BraveBrand employees into this community.",
+  "discovery": { "category": "agents", "tags": ["BraveBrand", "agents"] },
+  "host": { "networkOrigins": ["https://home.bravebrand.com"] }
+}
