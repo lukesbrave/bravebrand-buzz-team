@@ -127,7 +127,7 @@ export function apply(ctx) {
         return h("section", card,
           h("h1", null, "BraveBrand Team"),
           h("p", null, "Paste the access link from your BraveBrand membership to see who you can hire."),
-          h("input", { value: link, onChange: (e) => setLink(e.target.value), placeholder: `${HOME}/…`, style: { width: "100%" } }),
+          h("input", { value: link, onChange: (e) => setLink(e.target.value), placeholder: "Paste your link here: https://home.bravebrand.com/…", autoFocus: true, style: { width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid currentColor", borderRadius: 8, font: "inherit", background: "transparent", color: "inherit" } }),
           h("p", null, h("button", { type: "button", onClick: save }, "Unlock my team")),
           error && h("p", { role: "alert" }, error));
       return h("section", card,
