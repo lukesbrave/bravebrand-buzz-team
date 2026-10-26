@@ -146,6 +146,8 @@ function mountSheet(root, { agents, host }) {
   const cards = {};
   let membership = null;
   let gateError = "";
+  let loadError = "";
+  let checking = false;
 
   // Hired = an agent with the employee's exact name in this community.
   const agentNames = () => new Set(agents.snapshot().agents.map((a) => a.name));
@@ -265,8 +267,8 @@ function mountSheet(root, { agents, host }) {
     if (membership) $("#tiername").textContent = membership.tier === "premium" ? "Premium" : "Standard";
     if (pulseFlash) { el.textContent = el2.textContent = pulseFlash; return; }
     if (!membership) {
-      el.textContent = gateError || "Paste your BraveBrand access link above to unlock your team.";
-      el2.textContent = gateError;
+      el.textContent = gateError || loadError || "Paste your BraveBrand access link above to unlock your team.";
+      el2.textContent = gateError || loadError;
       return;
     }
     el.textContent = el2.textContent = "";
@@ -276,14 +278,14 @@ function mountSheet(root, { agents, host }) {
     const t = setTimeout(() => { pulseFlash = null; if (alive) renderPulse(); }, ms);
     disposers.push(() => clearTimeout(t));
   }
-  on($("#gate"), "submit", (e) => {
-    e.preventDefault();
-    const match = LINK.exec($("#gatelink").value);
-    if (!match) { gateError = "That isn't a BraveBrand access link. Paste the full link from your membership."; renderPulse(); return; }
+  function unlock(text) {
+    const match = LINK.exec(text || "");
+    if (!match) { gateError = "That isn't a BraveBrand access link. Copy the full link from your course and paste it here."; renderAll(); return; }
     localStorage.setItem(STORE, match[1].toLowerCase());
     key = match[1].toLowerCase(); gateError = "";
     boot();
-  });
+  }
+  on($("#gate"), "submit", (e) => { e.preventDefault(); unlock($("#gatelink").value); });
   on($("#changelink"), "click", () => {
     localStorage.removeItem(STORE); key = ""; membership = null; gateError = "";
     for (const k of Object.keys(manifests)) delete manifests[k];
@@ -337,9 +339,23 @@ function mountSheet(root, { agents, host }) {
     $("#spot-team").hidden = !m || m.locked || !hired(s);
     if (!s.pack) { act.innerHTML = '<span class="spot-soon">In training. Coming soon.</span>'; return; }
     if (!m) {
-      act.innerHTML = membership ? "" :
-        `<a class="cta" href="${classroomLink("spotlight")}" target="_blank" rel="noopener">Hire yours in the Classroom</a>
-         <span class="spot-tiny">Every hire is a course. Build your Digital Home, then staff it.</span>`;
+      if (membership) {
+        act.innerHTML = loadError
+          ? `<span class="spot-tiny">${loadError}</span><button class="cta" data-retry>Try again</button>`
+          : `<span class="spot-tiny">Getting ${s.role} ready\u2026</span>`;
+        return;
+      }
+      const typed = act.querySelector("#spotlink");
+      const kept = typed ? typed.value : "", focused = typed && root.activeElement === typed;
+      act.innerHTML = `<form class="spot-unlock" data-unlock>
+          <label class="spot-tiny" for="spotlink">Paste the access link from your course to hire your team.</label>
+          <input id="spotlink" placeholder="https://home.bravebrand.com/\u2026" autocomplete="off">
+          <button class="cta" type="submit"${checking ? " disabled" : ""}>${checking ? "Checking\u2026" : "Unlock my team"}</button>
+        </form>
+        <span class="spot-tiny">${gateError || loadError || `No link yet? It's in your course in the <a href="${classroomLink("spotlight")}" target="_blank" rel="noopener">BraveBrand Classroom</a>.`}</span>`;
+      const field = act.querySelector("#spotlink");
+      field.value = kept;
+      if (focused) field.focus();
       return;
     }
     if (m.locked) {
@@ -400,7 +416,14 @@ function mountSheet(root, { agents, host }) {
     if (!hired(s)) return doHire(s, s.el.querySelector(".badge"));
     openSpot(s);
   });
+  on(spot, "submit", (e) => {
+    const form = e.target.closest("form[data-unlock]");
+    if (!form) return;
+    e.preventDefault();
+    unlock(form.querySelector("input").value);
+  });
   on(spot, "click", (e) => {
+    if (e.target.closest("button[data-retry]")) { loadError = ""; boot(); return; }
     const button = e.target.closest("button[data-hire]");
     if (!button || button.disabled) return;
     const s = SEATS.find((q) => q.id === button.dataset.hire);
@@ -444,7 +467,12 @@ function mountSheet(root, { agents, host }) {
     if (!type) { hireError = "Switch on Claude under Settings → Agent setup first."; return renderAll(); }
     hiring = s.id; hireError = ""; renderAll();
     try {
-      const card = cards[s.pack] || (cards[s.pack] = await json(`${HOME}/${key}/${s.pack}/${m.card}`));
+      let card = cards[s.pack];
+      if (!card) {
+        try { card = await json(`${HOME}/${key}/${s.pack}/${m.card}`); }
+        catch { throw new Error(OFFLINE); }
+        if (card) cards[s.pack] = card;
+      }
       const def = card && card.definition;
       if (!def || typeof def.systemPrompt !== "string" || !def.name) throw new Error("The employee card didn't load. Try again.");
       const firstEver = !SEATS.some(hired);
@@ -473,26 +501,45 @@ function mountSheet(root, { agents, host }) {
   }
 
   // ---------- data ----------
+  // undefined = the file isn't there (or isn't JSON); throws = couldn't reach
+  // BraveBrand. Network trouble retries and never forgets the member's link.
   async function json(url) {
-    const response = await host.request({ url, method: "GET" });
-    if (response.status < 200 || response.status >= 300) return undefined;
-    try { return JSON.parse(response.body); } catch { return undefined; }
+    let last;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await host.request({ url, method: "GET", timeoutMs: 20000 });
+        if (response.status >= 500) throw new Error(`BraveBrand answered ${response.status}`);
+        if (response.status < 200 || response.status >= 300) return undefined;
+        try { return JSON.parse(response.body); } catch { return undefined; }
+      } catch (error) {
+        last = error;
+        await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+      }
+    }
+    throw last;
   }
+  const OFFLINE = "Couldn't reach BraveBrand. Check your internet connection, then try again.";
   async function boot() {
     renderAll();
     if (!/^[0-9a-f]{24}$/.test(key)) return;
-    const value = await json(`${HOME}/${key}/membership.json`);
+    checking = true; loadError = ""; renderAll();
+    let value;
+    try { value = await json(`${HOME}/${key}/membership.json`); }
+    catch { if (alive) { checking = false; loadError = OFFLINE; renderAll(); } return; }
     if (!alive) return;
+    checking = false;
     if (!value || !["premium", "standard"].includes(value.tier)) {
-      membership = null; gateError = "That access link isn't recognised.";
+      membership = null; gateError = "That access link isn't recognised. Copy it again from your course.";
       localStorage.removeItem(STORE); key = "";
       return renderAll();
     }
     membership = value;
     renderAll();
     await Promise.all(SEATS.filter((s) => s.pack).map(async (s) => {
-      const manifest = await json(`${HOME}/${key}/${s.pack}/manifest.json`);
-      if (manifest && alive) { manifests[s.pack] = manifest; renderAll(); }
+      try {
+        const manifest = await json(`${HOME}/${key}/${s.pack}/manifest.json`);
+        if (manifest && alive) { manifests[s.pack] = manifest; renderAll(); }
+      } catch { if (alive) { loadError = OFFLINE; renderAll(); } }
     }));
   }
   disposers.push(agents.subscribe(() => renderAll()));

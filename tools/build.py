@@ -39,6 +39,10 @@ css += """
     border:1.5px solid var(--gray30);font:500 13px "Teachers",sans-serif;color:var(--ink)}
   #gate input:focus{outline:none;border-color:var(--ink)}
   #foot #changelink{border:0;background:none;padding:0;color:inherit;font:inherit;text-decoration:underline;cursor:pointer}
+  .spot-unlock{display:flex;flex-direction:column;align-items:flex-start;gap:12px;width:100%}
+  .spot-unlock input{width:100%;box-sizing:border-box;height:48px;padding:0 16px;border-radius:12px;
+    border:1px solid #a7b7c5;background:#f5f8fb;color:var(--ink);font:500 15px "Teachers",sans-serif}
+  .spot-unlock input:focus{outline:3px solid var(--sky);outline-offset:2px}
   #gate button{height:34px;padding:0 16px;border:0;border-radius:99px;background:var(--green);
     color:#fff;font:600 13px "Teachers",sans-serif;cursor:pointer}
 """
