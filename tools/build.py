@@ -38,6 +38,7 @@ css += """
   #gate input{width:min(380px,42vw);height:34px;padding:0 12px;border-radius:99px;
     border:1.5px solid var(--gray30);font:500 13px "Teachers",sans-serif;color:var(--ink)}
   #gate input:focus{outline:none;border-color:var(--ink)}
+  #foot #changelink{border:0;background:none;padding:0;color:inherit;font:inherit;text-decoration:underline;cursor:pointer}
   #gate button{height:34px;padding:0 16px;border:0;border-radius:99px;background:var(--green);
     color:#fff;font:600 13px "Teachers",sans-serif;cursor:pointer}
 """

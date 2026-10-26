@@ -10,7 +10,8 @@ const CSS = /*CSS*/"";
 const FONTS = /*FONTS*/[];
 const ICON = "/*ICON*/";
 const STORE = "bravebrand.team.key";
-const LINK = /^\s*https:\/\/home\.bravebrand\.com\/(?:\?key=)?([0-9a-f]{24})/;
+// Any form of the tier link, or the bare 24-character key from it.
+const LINK = /(?:^|[^0-9a-f])([0-9a-f]{24})(?![0-9a-f])/i;
 const CLASSROOM = "https://www.skool.com/bravebrand/classroom";
 const classroomLink = (medium) => `${CLASSROOM}?utm_source=buzz&utm_medium=${medium}`;
 
@@ -94,7 +95,7 @@ const MARKUP = `
     </div>
   </div></div>
 </main>
-<footer id="foot">© 2026 BraveBrand — Digital Home. Your business, in one home you own.</footer>
+<footer id="foot">© 2026 BraveBrand — Digital Home. Your business, in one home you own.<span id="tier" hidden> · <span id="tiername"></span> membership · <button type="button" id="changelink">Change access link</button></span></footer>
 </div>
 <div id="spotlight" role="dialog" aria-modal="true" aria-labelledby="spot-name">
   <div class="scrim" data-close></div>
@@ -260,6 +261,8 @@ function mountSheet(root, { agents, host }) {
   function renderPulse() {
     const el = $("#pulse"), el2 = $("#pulse2");
     $("#gate").hidden = !!membership;
+    $("#tier").hidden = !membership;
+    if (membership) $("#tiername").textContent = membership.tier === "premium" ? "Premium" : "Standard";
     if (pulseFlash) { el.textContent = el2.textContent = pulseFlash; return; }
     if (!membership) {
       el.textContent = gateError || "Paste your BraveBrand access link above to unlock your team.";
@@ -276,10 +279,16 @@ function mountSheet(root, { agents, host }) {
   on($("#gate"), "submit", (e) => {
     e.preventDefault();
     const match = LINK.exec($("#gatelink").value);
-    if (!match) { gateError = "That isn't a BraveBrand access link."; renderPulse(); return; }
-    localStorage.setItem(STORE, match[1]);
-    key = match[1]; gateError = "";
+    if (!match) { gateError = "That isn't a BraveBrand access link. Paste the full link from your membership."; renderPulse(); return; }
+    localStorage.setItem(STORE, match[1].toLowerCase());
+    key = match[1].toLowerCase(); gateError = "";
     boot();
+  });
+  on($("#changelink"), "click", () => {
+    localStorage.removeItem(STORE); key = ""; membership = null; gateError = "";
+    for (const k of Object.keys(manifests)) delete manifests[k];
+    for (const k of Object.keys(cards)) delete cards[k];
+    renderAll(); $("#gatelink").focus();
   });
   on($("#infobtn"), "click", () => $("#info").classList.toggle("open"));
 
@@ -510,6 +519,7 @@ export function apply(ctx) {
   ctx.pages.register({
     id: "main",
     title: "BraveBrand Team",
+    layout: "workspace",
     primary: true,
     icon: ICON,
     component: function Team() {
