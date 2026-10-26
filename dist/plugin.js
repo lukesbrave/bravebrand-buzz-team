@@ -508,7 +508,7 @@ export function apply(ctx) {
   const React = ctx.react;
   loadFonts();
   ctx.pages.register({
-    id: "team",
+    id: "main",
     title: "BraveBrand Team",
     primary: true,
     icon: ICON,
