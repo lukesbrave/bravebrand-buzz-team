@@ -1,0 +1,347 @@
+
+  @font-face{font-family:"TXC Pearl";src:url("art/txc-pearl.woff2") format("woff2");
+    font-display:swap}
+  /* Figma palette: ink #16314c, sky #bbdcef, hired green #15bd58,
+     label gray #6f6f6f, empty-dot gray #c6c6c6. Crew art carries true
+     alpha (tools/matte-loops.sh) - no blend modes needed. */
+  :root{--ink:#16314c;--sky:#bbdcef;--green:#15bd58;--gray60:#6f6f6f;
+    --gray30:#c6c6c6}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);
+    font-family:"Teachers","Helvetica Neue",Arial,sans-serif}
+  .labelfont{font-family:"TXC Pearl","Teachers",sans-serif;font-weight:400;
+    text-transform:uppercase;letter-spacing:.02em}
+  img,video{display:block}
+  .blend{mix-blend-mode:multiply}
+  button{font-family:inherit}
+
+  /* ---------- header: one-viewport hero (Luke, 2026-08-30) ---------- */
+  .sheet{max-width:1728px;margin:0 auto;padding:0}
+  /* desktop title lives beside the house (.sidetitle); this one is mobile's */
+  h1{display:none;margin:0;text-align:center;font-weight:400;color:var(--ink);
+    font-size:clamp(34px,4.2vw,64px);line-height:1}
+  /* desktop moves the subheadline under the house (see #plaque);
+     mobile keeps it up top */
+  #intro{display:none;margin:12px auto 0;text-align:center;font-size:17px;
+    line-height:1.55;color:var(--gray60);max-width:560px}
+  /* mobile-only, like h1/#intro; desktop's pulse is the chip on the house */
+  #pulse{display:none;margin:6px auto 0;text-align:center;font-size:14px;
+    font-weight:600;color:var(--ink);min-height:20px}
+  #pulse:empty{display:none}
+
+  /* ---------- the hiring track: one meter (Luke, 2026-08-30) ----------
+     Count left, next hire right, green fill on a sky rail. The track is
+     pure distance now - action lives on the cards, reward in the house. */
+  #progress{margin:0;padding:0;width:100%}
+  .trackrow{display:flex;align-items:baseline;justify-content:space-between;
+    margin:0 0 8px}
+  #trackcount{font-size:14px;font-weight:600;color:var(--ink);
+    font-variant-numeric:tabular-nums}
+  #tracknext{font-size:12px;font-weight:600;color:var(--gray60);
+    text-transform:uppercase;letter-spacing:.06em}
+  .meter{height:10px;border-radius:99px;background:var(--sky);overflow:hidden}
+  .meterfill{height:100%;width:0;border-radius:99px;background:var(--green);
+    transition:width .9s ease .15s}
+
+  /* ---------- the board: full-height house with the title at its side,
+     crew shelf beneath (Luke, 2026-08-30) ---------- */
+  .board{width:100%;max-width:1728px;margin:0 auto}
+  .center{height:calc(100vh - 104px);min-height:560px;padding:30px 24px 26px;
+    display:flex;align-items:center;justify-content:center;
+    gap:clamp(24px,4.5vw,80px);width:100%}
+  .housewrap{height:100%;display:flex;justify-content:center;
+    position:relative}
+  #house{position:relative;height:100%;aspect-ratio:3/4}
+  #house img{width:100%;height:100%;object-fit:contain}
+  /* crew tops out level with the house; the meter sits on the floor.
+     The column and the figures scale with the screen so a big monitor
+     gets a big team, not a narrow strip (Luke, 2026-08-31) */
+  .rightcol{height:100%;display:flex;flex-direction:column;
+    justify-content:flex-start;gap:20px;
+    flex:0 1 clamp(660px,46vw,920px);min-width:0}
+  /* crew floats centred in the space above the meter: equal air above and
+     below it, meter still on the floor (Luke, 2026-08-31) */
+  .crew{margin:auto 0}
+  /* desktop went minimalist (Luke, 2026-08-30): the side title + intro are
+     retired; the header carries the name, the info-i carries the copy */
+  .aside{display:none}
+
+  /* ---------- chrome: slim header + footer ---------- */
+  #topbar{display:flex;align-items:center;justify-content:space-between;
+    height:58px;padding:0 24px;border-bottom:1px solid rgba(22,49,76,.08);
+    position:relative}
+  /* public invitation lives centred in the header (Luke, 2026-08-31) */
+  #headinvite{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    background:var(--green);color:#fff;padding:7px 16px;border-radius:99px;
+    font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;
+    transition:filter .18s ease}
+  #headinvite:hover,#headinvite:focus-visible{filter:brightness(1.07)}
+  #headinvite[hidden]{display:none}
+  /* wordmark + surface text match playground.bravebrand.com exactly:
+     bb-logo image at 20px, Inter Tight 11px caps at .15em, 50% black */
+  .brandline{display:flex;align-items:center;gap:10px;margin:0}
+  .brandline .wordmark{height:20px;width:auto;display:block}
+  .brandline .pagename{font-family:"Inter Tight","Teachers",sans-serif;
+    font-size:11px;font-weight:600;color:rgba(0,0,0,.5);
+    text-transform:uppercase;letter-spacing:.15em;white-space:nowrap}
+  #info{position:relative}
+  #infobtn{width:28px;height:28px;border-radius:99px;
+    border:1.5px solid var(--gray30);background:none;color:var(--gray60);
+    font-size:14px;font-weight:600;line-height:1;cursor:pointer;
+    font-family:Georgia,serif;font-style:italic}
+  #infobtn:hover,#infobtn:focus-visible{border-color:var(--ink);color:var(--ink)}
+  #infotip{position:absolute;top:38px;right:0;width:300px;margin:0;
+    background:var(--ink);color:#fff;border-radius:10px;padding:14px 16px;
+    font-size:13.5px;line-height:1.55;display:none;z-index:60;text-align:left;
+    box-shadow:0 10px 28px rgba(22,49,76,.25)}
+  #info:hover #infotip,#info:focus-within #infotip,
+  #info.open #infotip{display:block}
+  #foot{height:46px;display:flex;align-items:center;justify-content:center;
+    border-top:1px solid rgba(22,49,76,.08);font-size:12.5px;
+    color:var(--gray60);background:#fff;position:relative;z-index:5}
+  /* team pulse floats above the roof peak as a chip in hired-green; it only
+     speaks on news - hire moment, fresh training, unlock (Luke, 2026-08-30) */
+  #pulse2{position:absolute;top:0;left:50%;transform:translate(-50%,-65%);
+    z-index:3;background:var(--green);color:#fff;padding:7px 16px;
+    border-radius:99px;font-size:13.5px;font-weight:600;white-space:nowrap;
+    box-shadow:0 2px 8px rgba(22,49,76,.18)}
+  #pulse2:empty{display:none}
+  #pulse a,#pulse2 a{color:inherit;text-decoration:none}
+  #pulse a:hover,#pulse2 a:hover,#pulse a:focus-visible,
+  #pulse2 a:focus-visible{text-decoration:underline}
+  .room{position:absolute;inset:0;width:100%;height:100%;opacity:0;
+    transition:opacity .5s ease;pointer-events:none}
+  .room.on{opacity:1}
+  /* no text under the house (Luke, 2026-08-30) - the elements stay for the
+     JS plaque machinery but never render; one-liners live in the spotlight */
+  #plaque,#deed{display:none}
+
+  /* figures and row gaps scale with width but are CAPPED BY HEIGHT
+     (30vh-140px ~ three rows + badges + meter inside the board), so
+     wide-but-short screens never clip the meter (Luke, 2026-08-31) */
+  .crew{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:clamp(12px,min(1.9vw,2.5vh),36px) 12px;justify-items:center;
+    width:100%}
+  .seat{width:100%;max-width:clamp(152px,min(10.5vw,33vh - 138px),205px);
+    cursor:pointer;
+    border:0;background:none;padding:0;color:inherit;display:block}
+  .seat:focus-visible{outline:2px solid var(--ink);outline-offset:6px;
+    border-radius:12px}
+  /* stills + loops share one true-square framing (2048x2048 baseplates) */
+  .fig{display:block;position:relative;width:100%;aspect-ratio:1/1}
+  .fig img,.fig video{position:absolute;inset:0;width:100%;height:100%;
+    object-fit:contain;transform:scale(var(--figscale,1));
+    transform-origin:50% 88%}   /* grow from the feet, not the middle */
+  /* poster = the loop's own first frame, so the swap is an INSTANT flip on
+     the video's first presented frame - a crossfade would dip both layers
+     to half-opacity and flash the white page through the figure */
+  .fig video{opacity:0}
+  .fig.playing video{opacity:1}
+  /* the still hides two frames AFTER the video reveals ('settled'), so a
+     lagging video layer shows the still behind it, never the white page */
+  .fig.settled img{opacity:0}
+  .seat .badge{margin:8px auto 0;height:34px;min-width:96px;
+    padding:0 12px;font-size:11.5px}
+  .seat .badge img{width:15px;height:15px}
+  /* one-liners live in the spotlight on desktop; on mobile the role and
+     one-liner sit between the figure and the button */
+  .srole,.sdesc{display:none}
+
+  /* step badge - Figma 120x44, ink, Roboto Bold 12; hired flips green */
+  .badge{min-width:120px;height:44px;padding:0 18px;border-radius:8px;
+    background:var(--ink);color:#fff;display:flex;align-items:center;
+    justify-content:center;gap:5px;font-family:"Roboto",sans-serif;
+    font-weight:700;font-size:12px;position:relative;width:max-content}
+  .badge .btext{display:flex;align-items:center;gap:5px}
+  .badge img{width:18px;height:18px}
+  .badge{transition:transform .18s ease,box-shadow .18s ease}
+  .seat:hover .badge{transform:translateY(-2px);
+    box-shadow:0 8px 18px rgba(22,49,76,.25)}
+  .badge:active{transform:scale(.97)}
+  .badge.hired{background:var(--green)}
+  .badge.act{background:var(--sky);color:var(--ink)}
+  .badge.soon{opacity:.55}
+  .badge .freshdot{position:absolute;top:-4px;right:-4px;width:12px;height:12px;
+    border-radius:99px;background:#f5a623;border:2px solid #fff;display:none}
+  .badge.fresh .freshdot{display:block}
+
+  /* ---------- agent spotlight ---------- */
+  #spotlight{position:fixed;inset:0;z-index:70;display:none}
+  #spotlight.open{display:block}
+  .scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  .panel{position:relative;height:100%;overflow-y:auto;overscroll-behavior:contain;
+    display:flex;padding:40px 24px;color:#fff}
+  .spot-surface{position:relative;display:grid;grid-template-columns:38% minmax(0,1fr);
+    width:min(1080px,100%);margin:auto;border:1px solid #ffffff24;border-radius:28px;
+    background:#102337;box-shadow:0 24px 90px #0006;overflow:hidden;flex-shrink:0}
+  .spot-identity{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:42px 28px;background:linear-gradient(145deg,#ffffff09,transparent);
+    border-right:1px solid #ffffff18;text-align:center;min-width:0}
+  .spot-team{margin:0 0 18px;font-size:14px;line-height:1.4;font-weight:600;color:var(--sky)}
+  .spot-card{width:min(100%,290px);aspect-ratio:1/1;position:relative;flex-shrink:0;
+    background:radial-gradient(ellipse,#bbdcef18 0%,transparent 68%)}
+  .spot-card img,.spot-card video{position:absolute;inset:0;width:100%;height:100%;
+    object-fit:contain;transform:scale(var(--figscale,1));transform-origin:50% 88%}
+  .spot-card video{opacity:0}
+  .spot-card.playing video{opacity:1}
+  .spot-card.settled img{opacity:0}
+  .spot-eyebrow{margin:22px 0 14px;font-size:12px;font-weight:600;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--sky)}
+  .spot-name{margin:0;font-weight:400;font-size:clamp(38px,4vw,56px);line-height:1.02;color:#fff}
+  .spot-content{min-width:0;padding:64px 40px 36px;display:flex;flex-direction:column;gap:26px}
+  .spot-desc{margin:0;font-weight:600;font-size:20px;line-height:1.5;color:#edf3f8}
+  .spot-stats{display:grid;gap:10px;margin:0;text-align:left}
+  .spot-stats:empty{display:none}
+  .spot-stats>div{display:grid;grid-template-columns:82px minmax(0,1fr);gap:14px;
+    padding:16px;border:1px solid #ffffff14;border-radius:12px;background:#ffffff04;align-items:baseline}
+  .spot-stats dt{font-size:11px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--sky);white-space:nowrap}
+  .spot-stats dd{margin:0;font-size:17px;line-height:1.4;color:#fff;font-weight:600}
+  .spot-act{display:flex;flex-direction:column;align-items:flex-start;gap:12px;
+    padding-top:24px;border-top:1px solid #ffffff18}
+  .cta{background:var(--sky);color:var(--ink);border:0;border-radius:999px;
+    padding:16px 30px;font-family:"Roboto",sans-serif;font-weight:700;font-size:18px;
+    cursor:pointer;text-decoration:none;display:inline-block;text-align:center;
+    transition:transform .18s ease,box-shadow .18s ease,filter .18s ease}
+  .cta:hover{transform:translateY(-2px);filter:brightness(1.05);box-shadow:0 10px 24px #0004}
+  .cta:active{transform:translateY(0)}
+  .cta:disabled{cursor:not-allowed;opacity:.5;transform:none;box-shadow:none}
+  .spot-tiny{font-size:14px;line-height:1.5;color:#c3cfda}
+  .spot-tiny a{color:var(--sky)}
+  .update-link{background:none;border:0;color:var(--sky);text-decoration:underline;
+    text-underline-offset:3px;cursor:pointer;font:inherit;font-size:14px;padding:10px 0;min-height:44px;text-align:left}
+  .fresh-line{font-size:13px;font-weight:600;color:#ffce73}
+  .spot-soon{font-size:14px;color:#c3cfda}
+  .spot-close{position:absolute;top:16px;right:16px;width:40px;height:40px;
+    border:1px solid #ffffff24;border-radius:50%;background:#183047;color:#dce9f3;
+    font-size:28px;line-height:1;cursor:pointer;z-index:2}
+  .spot-close:hover{background:#28445e;color:#fff}
+  #spotlight :is(button,a,summary,textarea):focus-visible{outline:3px solid var(--sky);outline-offset:4px}
+  #spotlight textarea:focus-visible{outline-offset:2px}
+  .update-steps,.update-intro{display:none}
+  #spotlight.updating .spot-team,#spotlight.updating .spot-card,#spotlight.updating .spot-desc,#spotlight.updating .spot-stats{display:none}
+  #spotlight.updating .spot-surface{grid-template-columns:32% minmax(0,1fr)}
+  #spotlight.updating .spot-identity{align-items:flex-start;justify-content:flex-start;text-align:left;padding:42px 30px}
+  #spotlight.updating .spot-eyebrow{margin:0 0 16px}
+  #spotlight.updating .spot-name{font-size:38px}
+  #spotlight.updating .update-intro{display:block;margin:18px 0 0;font-size:15px;line-height:1.5;color:#c3cfda}
+  #spotlight.updating .spot-content{padding:48px 40px 32px;min-height:570px}
+  #spotlight.updating .spot-act{border:0;padding:0;gap:18px;align-items:stretch}
+  #spotlight.updating .update-steps{display:grid;gap:20px;padding:0;margin:32px 0 0;list-style:none;width:100%}
+  .update-steps li{display:flex;align-items:center;gap:12px;font-size:15px;color:#bdcbd7}
+  .step-number{display:grid;place-items:center;width:30px;height:30px;flex-shrink:0;
+    border-radius:50%;border:1px solid #ffffff35;font-size:13px}
+  .update-steps [aria-current="step"]{color:#fff;font-weight:600}
+  .update-steps [aria-current="step"] .step-number{background:var(--sky);border-color:var(--sky);color:var(--ink)}
+  .update-stage{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sky);font-weight:600;margin:0}
+  .update-heading{font:600 clamp(25px,2.4vw,30px)/1.15 "Teachers",sans-serif;margin:0;color:white}
+  .update-heading:focus{outline:none}
+  .update-copy{font-size:17px;line-height:1.5;margin:0;color:#e2eaf1}
+  .update-checklist{list-style:none;padding:0;margin:0;display:grid;gap:14px;counter-reset:tasks}
+  .update-checklist li{display:grid;grid-template-columns:24px 1fr;gap:10px;font-size:16px;line-height:1.5;color:#e2eaf1}
+  .update-checklist li:before{counter-increment:tasks;content:counter(tasks) ".";color:var(--sky);font-weight:600}
+  .update-field{display:grid;gap:8px;font-size:14px;font-weight:600}
+  #spotlight textarea{width:100%;box-sizing:border-box;font:400 14px/1.5 "Teachers",sans-serif;
+    color:var(--ink);background:#f5f8fb;border:1px solid #a7b7c5;border-radius:10px;padding:14px;resize:vertical}
+  #spotlight textarea::placeholder{color:#536b7f;opacity:1}
+  .update-note{padding:15px 18px;background:#bbdcef0a;border:1px solid #bbdcef26;
+    border-radius:12px;font-size:15px;line-height:1.5;color:#d2dfea;margin:0}
+  .update-note strong{display:block;margin-bottom:4px;color:#fff}
+  .update-review summary{font-size:14px;color:var(--sky);cursor:pointer;padding:6px 0;min-height:32px}
+  .update-review textarea{margin-top:10px}
+  .release-notes{width:100%;border:1px solid #bbdcef30;border-radius:12px;background:#bbdcef08;text-align:left}
+  .release-notes>summary{position:relative;list-style:none;cursor:pointer;padding:14px 42px 14px 16px}
+  .release-notes>summary::-webkit-details-marker{display:none}
+  .release-notes>summary:after{content:'+';position:absolute;right:16px;top:12px;font-size:22px;color:var(--sky)}
+  .release-notes[open]>summary:after{content:'−'}
+  .release-label{display:block;font-size:13px;font-weight:600;color:var(--sky)}
+  .release-summary{display:block;margin-top:5px;font-size:15px;line-height:1.45;color:#e2eaf1}
+  .release-body{display:grid;gap:18px;padding:4px 16px 18px;font-size:15px;line-height:1.5;color:#d2dfea}
+  .release-body h3,.release-body h4,.release-body p{margin:0}
+  .release-body h3,.release-body h4{font-size:15px;color:#fff;font-weight:600;margin-bottom:5px}
+  .release-title{font-size:13px;color:var(--sky)}
+  .release-notes.compact{background:none;border:0}
+  .release-notes.compact>summary{padding-left:0}
+  .release-notes.compact .release-body{padding-left:0;padding-right:0}
+  .update-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:4px}
+  .update-actions .cta{width:100%}
+  .update-actions [hidden]{display:none}
+  #spotlight .secondary{background:none;color:var(--sky);border:1px solid #bbdcef55;box-shadow:none}
+  #update-feedback{margin:0;font-size:14px;line-height:1.5;color:#ffda96}
+  #update-feedback:empty{display:none}
+  .update-footer{border-top:1px solid #ffffff18;padding-top:12px;margin-top:2px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .update-footer .spot-tiny{font-size:12px;text-align:right;max-width:280px}
+  @media(max-width:760px){
+    .panel{padding:16px 12px}
+    .spot-surface{grid-template-columns:1fr;border-radius:20px}
+    .spot-identity{padding:26px 24px;border-right:0;border-bottom:1px solid #ffffff18}
+    .spot-card{width:180px}
+    .spot-eyebrow{margin:12px 0}
+    .spot-name{font-size:38px;max-width:12ch}
+    .spot-content{padding:26px 22px;gap:22px}
+    .spot-desc{font-size:18px}
+    .spot-stats>div{grid-template-columns:68px minmax(0,1fr);padding:14px 12px;gap:10px}
+    .spot-stats dt{font-size:10px}
+    .spot-stats dd{font-size:16px}
+    .spot-act>.cta{width:100%}
+    #spotlight.updating .spot-surface{grid-template-columns:1fr}
+    #spotlight.updating .spot-identity{padding:26px 22px 20px}
+    #spotlight.updating .spot-name{font-size:32px;max-width:calc(100% - 28px)}
+    #spotlight.updating .spot-eyebrow{margin-bottom:12px}
+    #spotlight.updating .update-intro{display:none}
+    #spotlight.updating .update-steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:24px 0 0}
+    .update-steps li{flex-direction:column;gap:8px;text-align:center;font-size:12px;line-height:1.3}
+    #spotlight.updating .spot-content{padding:26px 22px 20px;min-height:0}
+    #spotlight.updating .spot-act{gap:18px}
+    .update-footer{align-items:flex-start}
+  }
+
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:90}
+
+  @media(prefers-reduced-motion:reduce){
+    .room{transition:none}
+    .meterfill{transition:none}
+    .cta,.badge{transition:none}
+    .cta:hover,.seat:hover .badge{transform:none}
+  }
+
+  /* ---------- mobile: no hover layer, tap goes straight to spotlight ---------- */
+  @media(max-width:1100px){
+    .sheet{padding:40px 16px 56px;display:block;height:auto;min-height:0}
+    /* big two-line title with air above it (Luke, 2026-08-30) */
+    h1{display:block;font-size:clamp(42px,11vw,58px);line-height:1.04;
+      max-width:16ch;margin:0 auto}
+    /* the mobile invitation is the #pulse line; the header stays clean */
+    #headinvite{display:none}
+    #intro{display:block}
+    /* the intro is on the page here, so the info-i has nothing to add */
+    #info{display:none}
+    #pulse{display:block}
+    #pulse:empty{display:none}
+    .board{display:block}
+    /* mobile keeps it simple: no house, no side title, just the crew */
+    .center{display:block;height:auto;min-height:0;padding:0}
+    .housewrap,.aside,#progress{display:none}
+    .seat{max-width:none}
+    .rightcol{display:block;height:auto}
+    /* single column, hire order top to bottom - clear the desktop grid
+       placements or the slot rules keep pairing seats into extra columns */
+    .crew{display:grid;grid-template-columns:minmax(0,1fr);gap:58px;
+      margin-top:38px}
+    /* the seat spans the screen so the copy can breathe; only the figure
+       stays capped */
+    .seat[data-slot]{grid-column:auto;grid-row:auto;margin:0 auto;
+      width:100%;max-width:460px}
+    .seat .fig{width:min(62vw,240px);margin:0 auto}
+    /* role names read as real headings on phones, not captions */
+    .srole{display:block;margin:14px auto 0;text-align:center;
+      font-size:clamp(26px,7vw,32px);line-height:1.1;color:var(--ink)}
+    /* one step below the page intro (17px): title > intro > role > desc */
+    .sdesc{display:block;margin:8px auto 4px;width:100%;
+      font-size:15px;line-height:1.55;color:var(--ink);text-align:center}
+    .seat .badge{height:54px;min-width:180px;font-size:16px;
+      border-radius:10px;margin-top:14px}
+    .badge img{width:20px;height:20px}
+  }
