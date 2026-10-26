@@ -567,6 +567,7 @@ export function apply(ctx) {
     id: "main",
     title: "BraveBrand Team",
     layout: "workspace",
+    placement: "topbar",
     primary: true,
     icon: ICON,
     component: function Team() {
