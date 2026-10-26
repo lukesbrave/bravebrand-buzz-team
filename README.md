@@ -1,10 +1,15 @@
 # BraveBrand Team (Buzz plugin)
 
-Hires BraveBrand employees into the selected Buzz community. The member pastes
-their BraveBrand access link once (home.bravebrand.com/<tier>/); the plugin reads
-membership.json, each pack manifest and card live from that tier, and creates the
-agent with `agents.port({source: "shared"})`: name, public avatar from /art, and the
-card's full instructions. Packs outside the tier show as "Included with Premium".
+The home.bravebrand.com team sheet, rebuilt as a Buzz page: the house with lit
+rooms, hover loops, spotlight, hiring track and confetti. **Employ Me** creates the
+employee in the selected Buzz community from the card in the member's tier.
 
-Install (desktop): Settings → Plugins → Manage plugins → choose folder → `dist/`, then enable.
-No build step: `dist/plugin.js` is a hand-written API v1 module.
+Install in Buzz desktop: Settings → Plugins → Manage plugins → add from repository
+`https://github.com/lukesbrave/bravebrand-buzz-team`, choose `dist`, then switch it on.
+Members paste their BraveBrand access link once.
+
+- `dist/` is the built plugin (manifest.json + plugin.js). Do not edit by hand.
+- `tools/plugin.template.js` + `tools/sheet.source.css` are the sources; rebuild with
+  `python3 tools/build.py https://cdn.jsdelivr.net/gh/lukesbrave/bravebrand-buzz-team@<commit>/assets`.
+- `assets/loops/*.webp` are the character loops as animated WebP with alpha (Buzz
+  plays no website video). Fonts are embedded because Buzz loads no web fonts.
