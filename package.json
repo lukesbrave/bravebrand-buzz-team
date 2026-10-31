@@ -1,0 +1,7 @@
+{
+  "name": "bravebrand-hire-contract-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {"test": "node --test tools/hiring.test.mjs"},
+  "devDependencies": {"happy-dom": "21.0.4", "react": "19.2.8", "react-dom": "19.2.8"}
+}

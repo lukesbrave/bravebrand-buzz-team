@@ -459,12 +459,16 @@ function mountSheet(root, { agents, host }) {
   disposers.push(() => { if (raf) cancelAnimationFrame(raf); });
 
   // ---------- hire: the ceremony, then the employee joins ----------
+  function showHireError(s, message) {
+    openSpot(s);
+    hireError = message;
+    renderAll();
+  }
   async function doHire(s, anchor) {
     const m = manifests[s.pack];
     if (!m || m.locked || hired(s) || hiring) return;
-    const type = agents.types().filter((t) => !t.remote).find((t) => /claude/i.test(t.title)) ||
-      agents.types().filter((t) => !t.remote)[0];
-    if (!type) { hireError = "Switch on Claude under Settings → Agent setup first."; return renderAll(); }
+    const type = agents.types().find((t) => !t.remote && /claude/i.test(t.title));
+    if (!type) return showHireError(s, "Switch on Claude under Settings → Agent setup first.");
     hiring = s.id; hireError = ""; renderAll();
     try {
       let card = cards[s.pack];
@@ -477,7 +481,8 @@ function mountSheet(root, { agents, host }) {
       if (!def || typeof def.systemPrompt !== "string" || !def.name) throw new Error("The employee card didn't load. Try again.");
       const firstEver = !SEATS.some(hired);
       await agents.port({ source: "shared", type: type.key, name: def.name,
-        picture: `${HOME}/art/${AVATARS[s.pack]}`, instructions: def.systemPrompt });
+        picture: `${HOME}/art/${AVATARS[s.pack]}`, instructions: def.systemPrompt,
+        ...(typeof def.model === "string" && def.model.trim() ? { config: { model: def.model } } : {}) });
       if (!alive) return;
       hiring = null;
       if (open) closeSpot();
@@ -495,8 +500,8 @@ function mountSheet(root, { agents, host }) {
       }
     } catch (error) {
       if (!alive) return;
-      hiring = null; hireError = String((error && error.message) || error);
-      renderAll();
+      hiring = null;
+      showHireError(s, String((error && error.message) || error));
     }
   }
 
