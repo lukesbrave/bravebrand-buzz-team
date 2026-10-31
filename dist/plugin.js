@@ -359,7 +359,14 @@ function mountSheet(root, { agents, host }) {
       return;
     }
     if (m.locked) {
-      act.innerHTML = `<a class="cta" href="${classroomLink("premium")}" target="_blank" rel="noopener">Unlock with Premium</a>`;
+      act.innerHTML = `<p class="spot-tiny">Want the full team? Upgrade to Premium to unlock all available agents.</p>
+        <a class="cta" href="${classroomLink("premium")}" target="_blank" rel="noopener">Explore Premium in the classroom</a>
+        <form class="spot-unlock" data-unlock>
+          <label class="spot-tiny" for="spotlink">Already a Premium member? Copy your Premium access link from the classroom and paste it here.</label>
+          <input id="spotlink" aria-label="Premium access link" placeholder="Paste your Premium access link" autocomplete="off">
+          <button class="cta" type="submit"${checking ? " disabled" : ""}>${checking ? "Checking…" : "Unlock my full team"}</button>
+        </form>
+        <span class="spot-tiny" role="status">${gateError || loadError}</span>`;
       return;
     }
     if (hired(s)) {
@@ -403,7 +410,7 @@ function mountSheet(root, { agents, host }) {
     if (!open) return;
     if (e.key === "Escape") { e.preventDefault(); closeSpot(); return; }
     if (e.key !== "Tab") return;
-    const items = [...spot.querySelectorAll("button:not(:disabled),a[href]")].filter((el) => el.getClientRects().length);
+    const items = [...spot.querySelectorAll("button:not(:disabled),a[href],input:not(:disabled)")].filter((el) => el.getClientRects().length);
     const index = items.indexOf(root.activeElement);
     if (e.shiftKey && index <= 0) { e.preventDefault(); items[items.length - 1]?.focus(); }
     else if (!e.shiftKey && (index === items.length - 1 || index < 0)) { e.preventDefault(); items[0]?.focus(); }
@@ -412,7 +419,7 @@ function mountSheet(root, { agents, host }) {
     if (!isMobile() || !s.pack) return openSpot(s);
     const m = manifests[s.pack];
     if (!m) return openSpot(s);
-    if (m.locked) { window.open(classroomLink("premium"), "_blank", "noopener"); return; }
+    if (m.locked) return openSpot(s);
     if (!hired(s)) return doHire(s, s.el.querySelector(".badge"));
     openSpot(s);
   });

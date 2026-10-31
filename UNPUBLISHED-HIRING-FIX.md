@@ -17,7 +17,7 @@ Changes in `tools/plugin.template.js`, rebuilt through `tools/build.py`:
 
 Verified the `config` import and Claude adoption contract against the exact Beta
 preview.185.1 source commit 63eeeea786716b564a83e431a5e61a7cb3d97988, not only the
-newer source checkout. Native persistence still needs the isolated desktop test.
+newer source checkout. Native Linux hire, training and current-starter build proof subsequently passed; see the lab receipts. The new upgrade UI below has automated lifecycle proof, not a native OS rehearsal.
 
 ## Executed checks
 
@@ -41,3 +41,27 @@ verified read-only training mirror from a new live membership integration.
 Before member rollout: complete the desktop rehearsal, review its findings and
 get Luke's explicit publication instruction. This branch does not update any
 member's existing employee or the plugin already installed on Luke's Mac.
+
+## Access-link onboarding increment — 2026-10-31
+
+Owner chose shared tier links; individual verification is deferred. Locked agents
+now show a full-team Premium invitation plus an inline Premium-link form. Narrow
+layouts open this same screen instead of sending the member straight to Skool.
+Keyboard focus navigation includes the access input. Classroom CTA uses the
+existing classroom URL, not an invented checkout/upgrade URL.
+
+Copy: “Want the full team? Upgrade to Premium to unlock all available agents.”
+Then: “Already a Premium member? Copy your Premium access link from the classroom
+and paste it here.” Buttons: “Explore Premium in the classroom” and
+“Unlock my full team”. Available excludes the coming-soon Sales Rep.
+
+19/19 generated-plugin React/Happy DOM tests pass. Added narrow/wide Standard to
+Premium with malformed input, unchanged existing Simon, Bob hiring once with exact
+instructions/model, saved tier and Hired badges after page remount, footer change
+and offline recovery. Network and Buzz agent services are doubles; no claim of
+native upgrade/restart or second-owner acceptance. Separate read-only live tier
+and all seven accessible card checks pass in the Auto Agency lab receipt
+TIER-ACCESS-RESULT.json. Training/card sources are untouched.
+
+Course pack has the upgrade chapter, wording, safe recording steps and remaining
+recording-OS/distribution/pilot checks. Nothing published or installed on the Mac.
