@@ -482,7 +482,7 @@ function mountSheet(root, { agents, host }) {
       const firstEver = !SEATS.some(hired);
       await agents.port({ source: "shared", type: type.key, name: def.name,
         picture: `${HOME}/art/${AVATARS[s.pack]}`, instructions: def.systemPrompt,
-        ...(typeof def.model === "string" && def.model.trim() ? { config: { model: def.model } } : {}) });
+        ...(typeof def.model === "string" && def.model.trim() ? { config: { ...type.defaults().config, model: def.model } } : {}) });
       if (!alive) return;
       hiring = null;
       if (open) closeSpot();

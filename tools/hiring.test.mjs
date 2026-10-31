@@ -7,7 +7,8 @@ import {createRoot} from 'react-dom/client';
 import {flushSync} from 'react-dom';
 const source=readFileSync(process.env.HIRING_TEST_ARTIFACT || new URL('../dist/plugin.js',import.meta.url),'utf8');
 const wait=async fn=>{for(let i=0;i<800;i++){if(fn())return;await new Promise(r=>setTimeout(r,10));}throw Error('Expected lifecycle state did not arrive');};
-const claude={key:'buzz.claude-code/claude-code',title:'Claude',remote:false};
+const defaults=Object.freeze({model:'',effort:'',instructions:'',workspace:'~/.buzz',scope:'thread'});
+const claude={key:'buzz.claude-code/claude-code',title:'Claude',remote:false,defaults:()=>({config:defaults})};
 async function fixture(options={}) {
  const window=new Window({url:'https://fixture.invalid'});
  for(const name of ['window','document','localStorage','navigator','HTMLElement','HTMLCanvasElement'])Object.defineProperty(globalThis,name,{configurable:true,value:window[name]});
@@ -43,7 +44,7 @@ async function fixture(options={}) {
 for(const mobile of [false,true]) {
  for(const tier of ['standard','premium'])test(`${mobile?'narrow':'wide'} ${tier}: exact instructions and Opus, then no duplicate`,async()=>{
    const f=await fixture({mobile,tier});try{await f.hire();await wait(()=>f.root.querySelector('[aria-label*="on your team"]'));
-     assert.equal(f.calls.length,1);assert.equal(f.calls[0].type,claude.key);assert.deepEqual(f.calls[0].config,{model:'opus'});assert.equal(f.calls[0].instructions,f.card.definition.systemPrompt);
+     assert.equal(f.calls.length,1);assert.equal(f.calls[0].type,claude.key);assert.deepEqual(f.calls[0].config,{...defaults,model:'opus'});assert.equal(defaults.model,'');assert.equal(f.calls[0].instructions,f.card.definition.systemPrompt);
      await f.hire();assert.equal(f.calls.length,1);
    }finally{f.close();}
  });

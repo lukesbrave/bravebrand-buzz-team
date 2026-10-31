@@ -7,8 +7,9 @@ Changes in `tools/plugin.template.js`, rebuilt through `tools/build.py`:
 
 - Require an available local Claude type; do not silently recruit into Codex or a
   remote runtime when Claude is absent.
-- Forward the card's model through `agents.port({config: {model}})`. The old direct
-  JSON card already specifies Opus. Instructions still pass byte-for-byte.
+- Forward the card's model through `agents.port({config: {...type.defaults().config, model}})`. The old direct
+  JSON card already specifies Opus. Preserve the Claude type’s workspace/session defaults: Buzz replaces the config
+  object rather than merging it. Instructions still pass byte-for-byte.
 - Open the existing spotlight for a failed hire on narrow screens, displaying the
   error and a working retry button. Wide-screen behaviour is preserved.
 - Retain main's existing network retry/saved-link protection and inline unlock.
