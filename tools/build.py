@@ -68,3 +68,6 @@ for marker, value in [('"/*ASSETS*/"', json.dumps(assets)), ('/*CSS*/""', json.d
 (ROOT / "dist").mkdir(exist_ok=True)
 (ROOT / "dist" / "plugin.js").write_text(out)
 print("dist/plugin.js", len(out.encode()), "bytes; assets", assets)
+
+(ROOT / "dist" / "icon.png").write_bytes(ICON_SOURCE.read_bytes())
+(ROOT / "dist" / "README.md").write_text((HERE / "plugin-readme.md").read_text())

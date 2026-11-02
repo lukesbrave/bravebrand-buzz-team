@@ -2,7 +2,7 @@
   "id": "bravebrand.hire",
   "name": "BraveBrand Team",
   "apiVersion": 1,
-  "description": "The BraveBrand team sheet inside Buzz: hire your employees into this community.",
+  "description": "Recruit your AI team to build and grow a Digital Home you own.",
   "discovery": {
     "category": "agents",
     "tags": [
