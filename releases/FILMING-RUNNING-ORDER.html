@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BraveBrand · Buzz filming guide</title>
+<style>
+:root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#183149;background:#edf3f6}
+*{box-sizing:border-box}body{margin:0;padding:40px 24px}main{max-width:980px;margin:auto}
+header{background:#bcdeee;border-radius:22px;padding:36px;margin-bottom:26px}.eyebrow{font-size:13px;font-weight:750;letter-spacing:.14em}
+h1{font-size:clamp(30px,5vw,48px);line-height:1.1;margin:16px 0}header p{max-width:650px;line-height:1.6;margin-bottom:0}
+h2{font-size:22px;margin:0 0 14px}h3{font-size:19px;margin:0}p,li{line-height:1.6}a{color:#165a82}
+.card{background:white;border:1px solid #d7e2e8;border-radius:16px;padding:26px;margin:16px 0}
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:16px}.time{font-size:13px;color:#536b7a;white-space:nowrap}
+ul{padding-left:22px;margin-bottom:0}li{padding:3px 0}.cue{border-left:3px solid #86bdd6;padding:10px 16px;background:#f0f7fa;margin:18px 0 0}
+label{display:flex;gap:10px;align-items:baseline;line-height:1.6;margin:8px 0}input{accent-color:#183149;width:18px;height:18px;flex-shrink:0}
+code{display:block;background:#edf3f6;padding:12px;border-radius:8px;overflow-wrap:anywhere;font-size:14px;margin:8px 0 14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid .card{margin:0}.quiet{color:#536b7a;font-size:14px}
+footer{padding:20px 0;font-size:13px;color:#536b7a}
+@media(max-width:650px){body{padding:18px 12px}.grid{grid-template-columns:1fr}header,.card{padding:22px}.top{display:block}.time{display:block;margin-top:8px}}
+@media print{body{background:white;padding:0}header,.card{break-inside:avoid}a{color:inherit}.card{margin:10px 0;padding:18px}header{padding:22px}h1{font-size:32px}}
+</style>
+</head>
+<body><main>
+<header><div class="eyebrow">BRAVEBRAND / RECORDING NOTES</div>
+<h1>Your first AI employee.</h1>
+<p>One course update: set up Buzz One Beta, find your way around, add BraveBrand Team and recruit Simon. Finish at his first reply. Build the Home in the next lesson.</p>
+<p><strong>Aim: 10–15 minutes.</strong> Keep this guide off the recorded screen.</p></header>
+<section class="card"><h2>Before you press record</h2>
+<label><input type="checkbox">Use the new Mac user and a demonstration workspace. Check Claude is available and ready to connect.</label>
+<label><input type="checkbox">Have the Buzz installer and your classroom resources ready. Rehearse the new-user setup once; record the screens you actually see.</label>
+<label><input type="checkbox">Check the GitHub import finds BraveBrand Team in dist using the branch below.</label>
+<label><input type="checkbox">Keep the Standard and Premium links handy in the shared text file. Hide identity keys, login codes and membership links from footage.</label>
+<label><input type="checkbox">Close unrelated windows, silence notifications and enlarge Buzz enough that labels are readable.</label>
+<p class="quiet">The GitHub import on this fresh Mac user is still worth rehearsing before the take. Earlier native checks used the local-folder route. Don’t delete or rehire existing agents to create a demonstration.</p>
+</section>
+<section class="card"><div class="top"><h3>01 · Explain the destination</h3><span class="time">30–45 sec</span></div>
+<ul><li>Buzz is your office. Your agents are your employees. Your Digital Home is the business asset you own.</li><li>You need Buzz, a connected AI provider and the BraveBrand classroom resources.</li></ul>
+<p class="cue">“By the end of this lesson, you’ll have Buzz set up and Simon ready to help you build your Digital Home. I’m using Claude for this walkthrough—that’s the setup we’ve tested for recruiting your team.”</p></section>
+<section class="card"><div class="top"><h3>02 · Download and set up Buzz</h3><span class="time">3–4 min</span></div>
+<ul><li>Show the classroom’s Buzz One Beta download and installation on your Mac.</li><li>Complete identity setup and explain saving recovery details privately. Pause or cut the recording while secrets are visible.</li><li>Connect and authorise Claude. Confirm it is ready in Buzz.</li><li>Create or select the business workspace/community. Explain “community” means their working space here.</li><li>Set a name and profile picture if the setup asks for them.</li></ul>
+<p class="cue">“Keep your recovery details somewhere safe. Don’t share them in the classroom or send them to an agent.”</p></section>
+<section class="card"><div class="top"><h3>03 · Give the quick office tour</h3><span class="time">1–2 min</span></div>
+<ul><li>Show where conversations, channels and Agents live.</li><li>Open Settings and show colours, appearance and light/dark mode briefly.</li><li>Point out Plugins. This is where they add the BraveBrand recruiting page.</li><li>Skip advanced automations, hosting and model settings in this lesson.</li></ul></section>
+<section class="card"><div class="top"><h3>04 · Add BraveBrand Team from GitHub</h3><span class="time">1–2 min</span></div>
+<ul><li>Open <strong>Settings → Plugins → Manage plugins → Add</strong>.</li><li>Paste the repository URL and the branch separately. Do not leave the branch blank.</li><li>Click <strong>Find</strong>, select <strong>BraveBrand Team</strong> in <strong>dist</strong>, review access, then install/enable it.</li><li>Open BraveBrand Team in the sidebar. No individual JSON download is needed.</li></ul>
+<p><strong>Git or GitHub repository</strong></p><code>https://github.com/lukesbrave/bravebrand-buzz-team</code>
+<strong>Branch or tag</strong><code>codex/hire-plugin-fixes-2026-10-31</code>
+<p class="quiet">These are the prepared branch details. Keep them in editable lesson text. The default branch is older; do not paste a GitHub /tree/ URL.</p></section>
+<section class="card"><div class="top"><h3>05 · Activate Standard and hire Simon</h3><span class="time">1–2 min</span></div>
+<ul><li>Copy the Standard access link from the classroom and paste it into the plugin; conceal the link in the recording.</li><li>Explain that Buzz remembers the link in that profile. A new Mac user or device may need it again.</li><li>Introduce Simon, the Digital Home Manager, and click <strong>Employ Me</strong>.</li><li>Find Simon in <strong>Agents</strong> and open his conversation.</li></ul>
+<p class="cue">“Simon is your first hire. He’ll guide you through setting up your Digital Home, step by step.”</p></section>
+<section class="card"><div class="top"><h3>06 · Show the Premium path</h3><span class="time">45–60 sec</span></div>
+<ul><li>Open a locked employee to show <strong>Want the full team?</strong> and <strong>Upgrade to Premium in Skool</strong>.</li><li>Show <strong>Already Premium? Enter your access link</strong>; conceal the actual Premium link while entering it.</li><li>Explain: same plugin, different access link. No second installation.</li><li>Standard includes Simon. Premium unlocks all six available employees. The Sales Manager is not available yet.</li><li>Show the unlocked team without hiring everyone during this lesson.</li></ul></section>
+<section class="card"><div class="top"><h3>07 · Start the first conversation and wrap</h3><span class="time">1 min</span></div>
+<ul><li>Message Simon with the new-Home introduction below. Show his first response.</li><li>For existing members: tell Simon about the Home they already have and ask him to inspect it before making changes.</li><li>Point to the next lesson: building the Digital Home.</li></ul>
+<p class="cue">“Hi Simon. I’m new here and want to build my Digital Home from scratch. Please guide me through the first step.”</p>
+<p class="cue">“That’s your first AI employee hired. In the next lesson, we’ll start building your Digital Home together.”</p></section>
+<div class="grid">
+<section class="card"><h2>Don’t miss these points</h2>
+<label><input type="checkbox">Claude is the tested recruiting setup for this video.</label>
+<label><input type="checkbox">The GitHub branch field must be filled.</label>
+<label><input type="checkbox">Both tiers use the same plugin.</label>
+<label><input type="checkbox">Existing members keep their agents and chats—no duplicate hires.</label>
+<label><input type="checkbox">Adding the plugin doesn’t automatically update existing training.</label>
+<label><input type="checkbox">Finish with Simon’s first reply and the next lesson.</label></section>
+<section class="card"><h2>Leave out of this video</h2><ul>
+<li>The old “download Simon JSON, then import” steps.</li><li>The old “set Sonnet 1 million context” instruction.</li><li>Promises of unlimited usage or a guaranteed build in one sitting.</li><li>Claims that every AI connection works identically.</li><li>Starter 3.0 launch promises—it remains unpublished.</li><li>The full Home build, agent rooms and advanced workflows.</li></ul></section>
+</div>
+<section class="card"><h2>Resources beside the video</h2><ul>
+<li>The maintained Buzz One Beta download link.</li><li>The GitHub repository and branch above.</li><li>Standard access in the Standard lesson; Premium access in the Premium-only lesson.</li><li>A link to the next Home-building lesson.</li></ul>
+<p><a href="START%20HERE%20-%20Links.txt">Open your private shared setup links</a> — do this off camera.</p>
+<p class="quiet">Prepared for your recording. Classroom publishing and member distribution are separate from preparing these files.</p></section>
+<footer>BraveBrand · Filming guide · 2 November 2026 · Works offline; no external fonts, scripts or tracking.</footer>
+</main></body></html>
