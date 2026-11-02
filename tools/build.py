@@ -69,5 +69,5 @@ for marker, value in [('"/*ASSETS*/"', json.dumps(assets)), ('/*CSS*/""', json.d
 (ROOT / "dist" / "plugin.js").write_text(out)
 print("dist/plugin.js", len(out.encode()), "bytes; assets", assets)
 
-(ROOT / "dist" / "icon.png").write_bytes(ICON_SOURCE.read_bytes())
+(ROOT / "dist" / "icon.png").write_bytes((ROOT / "assets/brand/brave-wordmark-blue.png").read_bytes())
 (ROOT / "dist" / "README.md").write_text((HERE / "plugin-readme.md").read_text())
