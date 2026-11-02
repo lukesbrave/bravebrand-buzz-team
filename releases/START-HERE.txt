@@ -34,5 +34,5 @@ You do not need another plugin download.
 Your link is remembered in that Buzz profile; a new device/profile may need it again.
 
 This package contains no membership access links.
-Recording package: 2026-11-02, tested plugin source dcbf8bd.
+Recording package: 2026-11-02, tested plugin source ccf3374.
 Native checks used Buzz One Beta 0.0.0-preview.185.1 on Mac.

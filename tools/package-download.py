@@ -4,7 +4,7 @@ from pathlib import Path
 import hashlib, json, subprocess, zipfile
 
 root = Path(__file__).resolve().parent.parent
-revision = "dcbf8bd"
+revision = "ccf3374"
 names = ("manifest.json", "plugin.js")
 payload = {}
 for name in names:

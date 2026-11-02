@@ -1,12 +1,12 @@
 {
-  "source_revision": "dcbf8bd",
+  "source_revision": "ccf3374",
   "status": "prepared, not published",
   "archive": "BraveBrand-Team-2026-11-02.zip",
-  "sha256": "cec37a449a1c5d1ab3fdd98d1b21e283b49a888a7a7f075430e0a72671b4fec9",
+  "sha256": "f1f78d226fd940c0f42d6a02c2907f8972bbcbaad5543e262eb50a64a5b2be58",
   "files": {
     "BraveBrand Team/manifest.json": "3913692fcd50764b0b444e3bb8011a6d060e2d5014b01a3cc2ed7a72e16c48de",
-    "BraveBrand Team/plugin.js": "00e01116558e5cb08075e78a6016596f99c092a46182283f0ced8591b38ec5b8",
-    "START HERE.txt": "82a0a03d7dcf3e5c656c0ac867c2e93c1ca0fbb43cf7fa90b8e90d5cb1badca6"
+    "BraveBrand Team/plugin.js": "67483a2e9dc3d0d0aa825b1c1a125eda9de78dab5122f6bdaccb6d40ec80d3a3",
+    "START HERE.txt": "5e532488e4645d824bb0babd952b2e2e13b23bf6dea12777449975f344846677"
   },
   "contains_access_links": false,
   "training_changes": false,
