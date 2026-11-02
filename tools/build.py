@@ -12,7 +12,7 @@ from PIL import Image
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
 FONTS = pathlib.Path.home() / ".buzz/.scratch/fonts"
-STILL = pathlib.Path.home() / ".buzz/REPOS/auto-agency-buzz/premium-skills/host/public/art/crew/architect.png"
+ICON_SOURCE = ROOT / "assets/brand/brave-blue.png"
 assets = sys.argv[1].rstrip("/")
 
 css = (HERE / "sheet.source.css").read_text()
@@ -58,9 +58,7 @@ for family, weight, name in [
 ]:
     fonts.append([family, weight, base64.b64encode((FONTS / name).read_bytes()).decode()])
 
-icon = Image.open(STILL).convert("RGBA").resize((64, 64), Image.LANCZOS)
-buf = io.BytesIO(); icon.save(buf, "PNG")
-icon_url = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+icon_url = "data:image/png;base64," + base64.b64encode(ICON_SOURCE.read_bytes()).decode()
 
 out = (HERE / "plugin.template.js").read_text()
 for marker, value in [('"/*ASSETS*/"', json.dumps(assets)), ('/*CSS*/""', json.dumps(css)),
