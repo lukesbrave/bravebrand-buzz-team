@@ -17,7 +17,7 @@ async function fixture(options={}) {
  Object.defineProperty(window.HTMLElement.prototype,'clientWidth',{configurable:true,get:()=>options.mobile?800:1400});
  window.HTMLCanvasElement.prototype.getContext=()=>({clearRect(){}});
  const card={definition:{name:'Simon — Digital Home Manager',systemPrompt:'Unchanged fixture instructions.\nRetain exact bytes.',model:'opus'}};
- let saved=options.existing?[{name:card.definition.name}]:[];
+ let saved=options.names ? options.names.map(name=>({name})) : options.existing?[{name:card.definition.name}]:[];
  let page,requests=0,manifestDone=false;const calls=[],subscribers=[];
  const ctx={react:React,pages:{register:p=>page=p},agents:{snapshot:()=>({agents:saved}),subscribe:fn=>{subscribers.push(fn);return()=>{};},types:()=>options.types??[claude],port:async input=>{calls.push(input);if(options.portError)throw Error('Fixture hire failed');saved.push({name:input.name});subscribers.forEach(fn=>fn());return{notes:[]};}},host:{request:async({url})=>{
    requests++;if(options.offline)throw Error('Fixture offline');if(options.refused)return{status:403,body:'{}'};
@@ -30,7 +30,7 @@ async function fixture(options={}) {
      return{status:200,body:JSON.stringify(bob?{definition:{...card.definition,name:'Bob — Content Manager'}}:card)};
    }
    if(path.endsWith('/membership.json'))return{status:200,body:JSON.stringify({tier:options.tier??'premium'})};
-   if(path.endsWith('/manifest.json')){manifestDone=true;return{status:200,body:JSON.stringify({card:'builder.agent.json',display:card.definition.name})};}
+   if(path.endsWith('/manifest.json')){manifestDone=true;return{status:200,body:JSON.stringify({card:'builder.agent.json',display:path.includes('/blaze/')?'Blaze (Video Editor)':card.definition.name})};}
    return{status:200,body:JSON.stringify(card)};
  }}};
  localStorage.setItem('bravebrand.team.key','1'.repeat(24));
@@ -71,9 +71,16 @@ for(const mobile of [false,true])test(`${mobile?'narrow':'wide'}: Standard to Pr
  const f=await fixture({mobile,upgrade:true,existing:true});try{
   await wait(()=>f.root.querySelector('#tiername').textContent==='Standard');
   f.root.querySelector('[aria-label^="Content Manager"]').click();
-  await wait(()=>f.root.querySelector('#spotlink'));
-  assert.match(f.root.querySelector('#spot-act').textContent,/Want the full team/);
-  assert.match(f.root.querySelector('#spot-act').textContent,/Already a Premium member/);
+  await wait(()=>f.root.querySelector('[data-premium-entry]'));
+  assert.equal(f.root.querySelector('#spotlink'),null);
+  assert.equal(f.root.querySelector('#spot-act .cta').textContent,'Upgrade to Premium in Skool');
+  f.root.querySelector('[data-premium-entry]').click();
+  assert.equal(f.root.querySelector('#spot-act a.cta'),null);
+  f.root.querySelector('[data-premium-back]').click();
+  assert.equal(f.root.querySelector('#spotlink'),null);
+  f.root.querySelector('[data-premium-entry]').click();
+
+  assert.match(f.root.querySelector('#spot-act').textContent,/Unlock your full team/);
   assert.equal(f.calls.length,0);
   const submit=value=>{f.root.querySelector('#spotlink').value=value;f.root.querySelector('form[data-unlock]').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));};
   submit('not a link');assert.match(f.root.querySelector('#spot-act').textContent,/isn't a BraveBrand/);assert.equal(f.calls.length,0);
@@ -108,11 +115,23 @@ test('footer Change access link upgrades in the same plugin without creating emp
 test('offline upgrade retains the entered Premium link and recovers on reopening',async()=>{
  const options={upgrade:true,existing:true};const f=await fixture(options);try{
   await wait(()=>f.root.querySelector('#tiername').textContent==='Standard');
-  f.root.querySelector('[aria-label^="Content Manager"]').click();await wait(()=>f.root.querySelector('#spotlink'));
+  f.root.querySelector('[aria-label^="Content Manager"]').click();await wait(()=>f.root.querySelector('[data-premium-entry]'));f.root.querySelector('[data-premium-entry]').click();
   options.offline=true;f.root.querySelector('#spotlink').value='2'.repeat(24);
   f.root.querySelector('form[data-unlock]').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));
   await wait(()=>f.root.querySelector('#spot-act').textContent.includes("Couldn't reach BraveBrand"));
   assert.equal(localStorage.getItem('bravebrand.team.key'),'2'.repeat(24));assert.equal(f.calls.length,0);
   options.offline=false;const reopened=await f.reopen();await wait(()=>reopened.querySelector('#tiername').textContent==='Premium');assert.equal(f.calls.length,0);
+ }finally{f.close();}
+});
+
+for (const name of ['Blaze (Video Editor & Ads Manager)', 'Blaze (Video Editor)', 'Blaze', 'Blaze (Unrelated Role)']) test('Blaze recognition: '+name,async()=>{
+ const f=await fixture({names:[name]});try{
+  await wait(()=>f.root.querySelector('#tiername').textContent==='Premium');
+  f.root.querySelector('[aria-label^="Video Editor"]').click();
+  await wait(()=>f.root.querySelector('[data-hire="adsmanager"]') || f.root.querySelector('#spot-act').textContent.includes('on your team'));
+  const known=['Blaze (Video Editor & Ads Manager)','Blaze (Video Editor)'].includes(name);
+  assert.equal(f.root.querySelector('#spot-act').textContent.includes('on your team'),known);
+  assert.equal(!!f.root.querySelector('[data-hire="adsmanager"]'),!known);
+  assert.equal(f.calls.length,0);
  }finally{f.close();}
 });

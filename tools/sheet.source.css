@@ -345,3 +345,9 @@
       border-radius:10px;margin-top:14px}
     .badge img{width:20px;height:20px}
   }
+
+  .premium-title{margin:0;font-size:20px;line-height:1.35;font-weight:700;color:var(--ink)}
+  .spot-unlock .spot-tiny{margin:0}
+  .premium-secondary{appearance:none;border:0;background:none;padding:4px 0;color:#c3cfda;font:inherit;font-size:14px;line-height:1.5;cursor:pointer;text-align:left}
+  .premium-secondary:hover{color:var(--sky);text-decoration:underline}
+  .premium-secondary:focus-visible{outline:2px solid var(--sky);outline-offset:4px;border-radius:2px}

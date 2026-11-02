@@ -65,3 +65,21 @@ TIER-ACCESS-RESULT.json. Training/card sources are untouched.
 
 Course pack has the upgrade chapter, wording, safe recording steps and remaining
 recording-OS/distribution/pilot checks. Nothing published or installed on the Mac.
+
+## 2026-11-02: quieter Premium invitation and existing Blaze
+
+Supersedes the inline form above. Locked agents show “Want the full team?”,
+one primary “Upgrade to Premium in Skool” link, and a quiet “Already Premium?
+Enter your access link” action. That action replaces the invitation with the
+access form; Back restores it. Entered values/focus survive validation renders.
+The classroom destination is unchanged; no checkout URL is invented.
+
+The Mac Agents list confirms the existing local name “Blaze (Video Editor &
+Ads Manager)” while the current manifest uses “Blaze (Video Editor)”.
+Recognition accepts that one verified legacy name for the Blaze seat only.
+No rename, rehire, training or configuration mutation is performed.
+
+23 generated-artifact tests pass, including both recognised Blaze names and
+rejection of bare/unrelated Blaze names, narrow/wide upgrade, Back navigation,
+validation, persistence, exact training/model and duplicate prevention.
+Nothing published or deployed.

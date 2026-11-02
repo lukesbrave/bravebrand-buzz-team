@@ -148,11 +148,16 @@ function mountSheet(root, { agents, host }) {
   let gateError = "";
   let loadError = "";
   let checking = false;
+  let premiumEntry = false;
 
-  // Hired = an agent with the employee's exact name in this community.
+  // Recognise the verified previous Blaze name without changing existing agents.
   const agentNames = () => new Set(agents.snapshot().agents.map((a) => a.name));
   const displayOf = (s) => (s.pack && manifests[s.pack] && manifests[s.pack].display) || "";
-  const hired = (s) => !!(s.pack && displayOf(s) && agentNames().has(displayOf(s)));
+  const hired = (s) => {
+    const names = agentNames();
+    return !!(s.pack && displayOf(s) && (names.has(displayOf(s)) ||
+      (s.pack === "blaze" && names.has("Blaze (Video Editor & Ads Manager)"))));
+  };
   const agentName = (s) => (/^[A-Z][a-z]+(?= \()/.exec(displayOf(s)) || [displayOf(s) || s.role])[0];
 
   // ---------- height: the board fills the page area like 100vh did ----------
@@ -359,14 +364,25 @@ function mountSheet(root, { agents, host }) {
       return;
     }
     if (m.locked) {
-      act.innerHTML = `<p class="spot-tiny">Want the full team? Upgrade to Premium to unlock all available agents.</p>
-        <a class="cta" href="${classroomLink("premium")}" target="_blank" rel="noopener">Explore Premium in the classroom</a>
-        <form class="spot-unlock" data-unlock>
-          <label class="spot-tiny" for="spotlink">Already a Premium member? Copy your Premium access link from the classroom and paste it here.</label>
-          <input id="spotlink" aria-label="Premium access link" placeholder="Paste your Premium access link" autocomplete="off">
-          <button class="cta" type="submit"${checking ? " disabled" : ""}>${checking ? "Checking…" : "Unlock my full team"}</button>
-        </form>
-        <span class="spot-tiny" role="status">${gateError || loadError}</span>`;
+      const typed = act.querySelector("#spotlink");
+      const kept = typed ? typed.value : "", focused = typed && root.activeElement === typed;
+      act.innerHTML = premiumEntry
+        ? `<form class="spot-unlock" data-unlock>
+            <label class="premium-title" for="spotlink">Unlock your full team</label>
+            <p class="spot-tiny">Paste your Premium access link from the Skool classroom.</p>
+            <input id="spotlink" aria-label="Premium access link" placeholder="Paste your Premium access link" autocomplete="off">
+            <button class="cta" type="submit"${checking ? " disabled" : ""}>${checking ? "Checking…" : "Unlock my full team"}</button>
+          </form>
+          <button class="premium-secondary" type="button" data-premium-back>Back</button>`
+        : `<h3 class="premium-title">Want the full team?</h3>
+          <a class="cta" href="${classroomLink("premium")}" target="_blank" rel="noopener">Upgrade to Premium in Skool</a>
+          <button class="premium-secondary" type="button" data-premium-entry>Already Premium? Enter your access link</button>`;
+      const status = document.createElement("span");
+      status.className = "spot-tiny"; status.setAttribute("role", "status");
+      status.textContent = gateError || loadError;
+      act.appendChild(status);
+      const field = act.querySelector("#spotlink");
+      if (field) { field.value = kept; if (focused) field.focus(); }
       return;
     }
     if (hired(s)) {
@@ -380,7 +396,7 @@ function mountSheet(root, { agents, host }) {
 
   function openSpot(s) {
     if (!open) returnFocus = root.activeElement;
-    if (open !== s) hireError = "";
+    if (open !== s) { hireError = ""; premiumEntry = false; }
     open = s;
     $("#spot-stats").innerHTML = s.stats
       ? `<div><dt>You get</dt><dd>${s.stats.get}</dd></div>
@@ -430,6 +446,13 @@ function mountSheet(root, { agents, host }) {
     unlock(form.querySelector("input").value);
   });
   on(spot, "click", (e) => {
+    if (e.target.closest("button[data-premium-entry]")) {
+      premiumEntry = true; renderSpotAct(open); $("#spotlink").focus(); return;
+    }
+    if (e.target.closest("button[data-premium-back]")) {
+      premiumEntry = false; gateError = ""; renderSpotAct(open);
+      spot.querySelector("[data-premium-entry]").focus(); return;
+    }
     if (e.target.closest("button[data-retry]")) { loadError = ""; boot(); return; }
     const button = e.target.closest("button[data-hire]");
     if (!button || button.disabled) return;
