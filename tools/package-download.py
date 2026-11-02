@@ -4,8 +4,8 @@ from pathlib import Path
 import hashlib, json, subprocess, zipfile
 
 root = Path(__file__).resolve().parent.parent
-revision = "ccf3374"
-names = ("manifest.json", "plugin.js")
+revision = "7caed7a"
+names = ("manifest.json", "plugin.js", "icon.png", "README.md")
 payload = {}
 for name in names:
     data = (root / "dist" / name).read_bytes()
