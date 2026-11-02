@@ -1,0 +1,38 @@
+BRAVEBRAND TEAM — START HERE
+
+1. Download and unzip this package.
+   On Mac, double-click the ZIP. On Windows, choose Extract All.
+   Keep the extracted BraveBrand Team folder somewhere you can find it.
+
+2. Open Buzz One Beta and complete its setup.
+   Connect Claude in Buzz's agent setup before recruiting your first agent.
+   This recruiting version requires the local Claude connection.
+
+3. Open Settings > Plugins > Manage plugins > Add.
+   Choose the folder option, then select the extracted "BraveBrand Team"
+   folder containing manifest.json and plugin.js. Do not select the ZIP.
+   Review the plugin details and access, then install/enable it.
+   This package is unsigned; obtain it only from the BraveBrand classroom.
+
+4. Open BraveBrand Team from Buzz's navigation.
+   Copy your access link from the Skool classroom and paste it into the plugin.
+   Standard and Premium members use the same plugin download.
+
+5. Start with Simon, your Digital Home Manager.
+   Click Employ Me, find him in Agents, and say hello.
+   Continue with the Digital Home setup lesson.
+
+ALREADY HAVE YOUR AGENTS?
+Keep your existing agents and conversations. Do not hire another copy.
+This plugin does not update or replace their training.
+If an existing agent is not recognised, stop and ask for help before hiring.
+
+UPGRADING TO PREMIUM?
+Open a locked agent, choose "Already Premium? Enter your access link",
+then paste your Premium link from the classroom.
+You do not need another plugin download.
+Your link is remembered in that Buzz profile; a new device/profile may need it again.
+
+This package contains no membership access links.
+Recording package: 2026-11-02, tested plugin source e178aef.
+Native checks used Buzz One Beta 0.0.0-preview.185.1 on Mac.

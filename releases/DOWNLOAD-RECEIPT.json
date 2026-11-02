@@ -1,0 +1,14 @@
+{
+  "source_revision": "e178aef",
+  "status": "prepared, not published",
+  "archive": "BraveBrand-Team-2026-11-02.zip",
+  "sha256": "1b025a5424d1a060c6dde4ca5573e9225b609e264b4fb5c91b26649eb2615988",
+  "files": {
+    "BraveBrand Team/manifest.json": "3913692fcd50764b0b444e3bb8011a6d060e2d5014b01a3cc2ed7a72e16c48de",
+    "BraveBrand Team/plugin.js": "48f81f81993249f512486c43232ccec57d2a2283014d17ca855014fcfcda97d8",
+    "START HERE.txt": "840576576c963ef9021540b06d58033703d26e5c9c4205528aeb5670b318d2ec"
+  },
+  "contains_access_links": false,
+  "training_changes": false,
+  "format": "unzip, then import BraveBrand Team folder into Buzz"
+}
