@@ -1,30 +1,34 @@
 # Add BraveBrand Team to Buzz
 
-Use Settings → Plugins → Manage plugins → Add.
+Open Settings → Plugins → Manage plugins → Add.
 
 **Git or GitHub repository**
 
 https://github.com/lukesbrave/bravebrand-buzz-team
 
-**Branch or tag**
+**Branch or tag: leave blank.**
 
-codex/hire-plugin-fixes-2026-10-31
+Click Find, select BraveBrand Team in the dist folder, review access and
+install/enable it. Open BraveBrand Team and paste the access link from your
+classroom. Connect Claude before recruiting with this version.
 
-Click **Find**, select **BraveBrand Team** in the **dist** folder, review the
-access requested and install/enable it. Open BraveBrand Team and paste your
-Standard or Premium access link from the classroom.
+Both membership tiers use this same repository. No ZIP or individual agent JSON
+download is needed. Keep existing employees and conversations; do not recruit
+duplicates.
 
-Both tiers use the same repository and branch. No ZIP or individual agent JSON
-download is needed. Connect Claude before recruiting with this version.
-Keep existing agents and chats; do not recruit duplicates.
+## Already installed from this GitHub link?
 
-The branch field is required for this prepared candidate. Leaving it blank loads
-the repository default, which does not yet contain these tested changes.
-Do not paste a GitHub /tree/ URL: Buzz accepts the repository and branch separately.
+1. Wait for any recruiting operation to finish.
+2. Open Settings → Plugins → Manage plugins → BraveBrand Team.
+3. Click Check for updates, then Update.
+4. Review the update and confirm it. Reopen BraveBrand Team.
 
-For the course: place the repository URL and branch in editable text beneath the
-video, with the member's access link supplied separately. Premium access belongs
-in the Premium-only lesson. This is a prepared branch install, not a public-main
-promotion or signed release. A stable release/default-branch rollout still needs
-approval. Updates are explicitly reviewed in Buzz; branch pushes do not silently
-replace installed code or existing agents' training.
+Use Update in place. Do not delete the plugin or your agents, clear Buzz data,
+or re-import agents. The plugin keeps its identity, and its update does not
+rewrite existing agent instructions, models or conversations.
+The saved membership link remains in the same Buzz profile.
+
+If installed from a local folder, refresh that source folder with the new package
+and use Update. If installed with the earlier prepared branch, that branch also
+contains this correction; use its normal update. If your source is unavailable,
+stop and ask for help rather than deleting anything.

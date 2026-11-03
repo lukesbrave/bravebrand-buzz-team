@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {execFileSync} from 'node:child_process';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Window} from 'happy-dom';
@@ -17,7 +18,7 @@ async function fixture(options={}) {
  Object.defineProperty(window.HTMLElement.prototype,'clientWidth',{configurable:true,get:()=>options.mobile?800:1400});
  window.HTMLCanvasElement.prototype.getContext=()=>({clearRect(){}});
  const card={definition:{name:'Simon — Digital Home Manager',systemPrompt:'Unchanged fixture instructions.\nRetain exact bytes.',model:'opus'}};
- let saved=options.names ? options.names.map(name=>({name})) : options.existing?[{name:card.definition.name}]:[];
+ let saved=options.records ?? (options.names ? options.names.map(name=>({name})) : options.existing?[{name:card.definition.name}]:[]);
  let page,requests=0,manifestDone=false;const calls=[],subscribers=[];
  const ctx={react:React,pages:{register:p=>page=p},agents:{snapshot:()=>({agents:saved}),subscribe:fn=>{subscribers.push(fn);return()=>{};},types:()=>options.types??[claude],port:async input=>{calls.push(input);if(options.portError)throw Error('Fixture hire failed');saved.push({name:input.name});subscribers.forEach(fn=>fn());return{notes:[]};}},host:{request:async({url})=>{
    requests++;if(options.offline)throw Error('Fixture offline');if(options.refused)return{status:403,body:'{}'};
@@ -34,7 +35,7 @@ async function fixture(options={}) {
    return{status:200,body:JSON.stringify(card)};
  }}};
  localStorage.setItem('bravebrand.team.key','1'.repeat(24));
- const mod=await import('data:text/javascript;base64,'+Buffer.from(source+'\n// '+Math.random()).toString('base64'));mod.apply(ctx);
+ const mod=await import('data:text/javascript;base64,'+Buffer.from((options.source ?? source)+'\n// '+Math.random()).toString('base64'));mod.apply(ctx);
  const container=document.createElement('div');document.body.append(container);const reactRoot=createRoot(container);
  flushSync(()=>reactRoot.render(React.createElement(page.component)));
  await wait(()=>container.firstChild?.shadowRoot);const root=container.firstChild.shadowRoot;
@@ -47,7 +48,13 @@ async function fixture(options={}) {
    if(!options.mobile&&!saved.length){await wait(()=>root.querySelector('[data-hire="architect"]'));root.querySelector('[data-hire="architect"]').click();}
  };
  const reopen=async()=>{flushSync(()=>reactRoot.render(null));flushSync(()=>reactRoot.render(React.createElement(page.component)));await wait(()=>container.firstChild?.shadowRoot);return container.firstChild.shadowRoot;};
- return{root,calls,card,hire,close,reopen,requests:()=>requests};
+ const replacePlugin=async()=>{
+   flushSync(()=>reactRoot.render(null));
+   const next=await import('data:text/javascript;base64,'+Buffer.from(source+'\n// replacement '+Math.random()).toString('base64'));
+   next.apply(ctx);
+   return reopen();
+ };
+ return{root,calls,card,hire,close,reopen,replacePlugin,requests:()=>requests};
 }
 for(const mobile of [false,true]) {
  for(const tier of ['standard','premium'])test(`${mobile?'narrow':'wide'} ${tier}: exact instructions and Opus, then no duplicate`,async()=>{
@@ -132,6 +139,28 @@ for (const name of ['Blaze (Video Editor & Ads Manager)', 'Blaze (Video Editor)'
   const known=['Blaze (Video Editor & Ads Manager)','Blaze (Video Editor)'].includes(name);
   assert.equal(f.root.querySelector('#spot-act').textContent.includes('on your team'),known);
   assert.equal(!!f.root.querySelector('[data-hire="adsmanager"]'),!known);
+  assert.equal(f.calls.length,0);
+ }finally{f.close();}
+});
+
+test('published old plugin to corrected plugin preserves access and customised agents',async()=>{
+ const old=execFileSync('git',['show','25a6ee94b6b9bded556ff5c64bfce853bbe93349:dist/plugin.js'],{encoding:'utf8'});
+ const records=[
+  {name:'Simon — Digital Home Manager',id:'existing-simon',instructions:'Owner-customised Simon instructions',config:{model:'owner-choice'},memory:{project:'Keep my Home'}},
+  {name:'Blaze (Video Editor & Ads Manager)',id:'existing-blaze',instructions:'Keep customised Blaze',config:{model:'owner-choice'}}
+ ];
+ const before=structuredClone(records);
+ const f=await fixture({source:old,records});try{
+  await wait(()=>f.root.querySelector('#tiername').textContent==='Premium');
+  const access=localStorage.getItem('bravebrand.team.key');
+  const updated=await f.replacePlugin();
+  await wait(()=>updated.querySelector('#tiername').textContent==='Premium');
+  await wait(()=>updated.querySelector('[aria-label^="Video Editor"]').getAttribute('aria-label').includes('on your team'));
+  assert.deepEqual(records,before);
+  assert.equal(localStorage.getItem('bravebrand.team.key'),access);
+  assert.equal(f.calls.length,0,'Plugin replacement never imports or rewrites an employee');
+  updated.querySelector('[aria-label^="Digital Home Manager"]').click();
+  await wait(()=>updated.querySelector('#spot-act').textContent.includes('on your team'));
   assert.equal(f.calls.length,0);
  }finally{f.close();}
 });
