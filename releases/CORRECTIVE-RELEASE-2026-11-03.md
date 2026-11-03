@@ -28,3 +28,9 @@ automatically alter models/instructions of employees created by the older build.
 
 The repository default is the member route; leave Branch or tag blank.
 Prepared branch remains compatible for users who entered it.
+
+Publication: default main promoted from 25a6ee94 to 51cbc09. Fresh HTTPS clone
+without a branch resolved to 51cbc09, discovered exactly one built plugin (dist),
+and all four plugin files matched the reviewed artifact. All 24 checks passed
+against that downloaded plugin. Subsequent documentation/receipt commits retain
+those exact dist bytes. No native fresh-profile Git update was executed this turn.

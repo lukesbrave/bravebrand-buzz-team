@@ -28,7 +28,7 @@ with zipfile.ZipFile(out) as archive:
         assert archive.read(name) == data
 receipt = {
     "source_revision": revision,
-    "status": "prepared, not published",
+    "status": "published on repository default main, 2026-11-03",
     "archive": out.name,
     "sha256": hashlib.sha256(out.read_bytes()).hexdigest(),
     "files": {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()},
