@@ -18,7 +18,10 @@ const classroomLink = (medium) => `${CLASSROOM}?utm_source=buzz&utm_medium=${med
 // Copy and geometry from the team sheet (index.html, SEATS and ROOMS).
 const FRED = { id: "fred", pack: "fred-design", role: "Fred (Graphic Designer)", slot: "l4",
     stepName: "Step Seven", artwork: "fred-chameleon-4d28c03d", accent: "#8461c9",
-    desc: "Fred turns your approved Brand Playbook into visual identities and editable website designs." };
+    stats: { get: "Logo files, a brand deck and an editable homepage design",
+      run: "Three visual routes, then logo and homepage revisions with you",
+      so: "Give your web team a design you’ve already signed off on." },
+    desc: "Give Fred Tumi’s Brand Playbook and a handful of references. He’ll show you three ways your brand could look. Pick the one that feels like you and he’ll take it from logo to homepage." };
   const SEATS = [
   { id:'architect', pack:'architect', role:'Digital Home Manager', slot:'l1',
     stepName:'Step One', accent:'#4a7fb5', scale:1.1,
