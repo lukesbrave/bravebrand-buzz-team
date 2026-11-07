@@ -17,7 +17,7 @@ const classroomLink = (medium) => `${CLASSROOM}?utm_source=buzz&utm_medium=${med
 
 // Copy and geometry from the team sheet (index.html, SEATS and ROOMS).
 const FRED = { id: "fred", pack: "fred-design", role: "Fred (Graphic Designer)", slot: "l4",
-    stepName: "Step Seven", artwork: "fred-chameleon-4d28c03d", accent: "#8461c9",
+    stepName: "Step Seven", artwork: "fred-studio-loop", accent: "#8461c9",
     stats: { get: "Logo files, a brand deck and an editable homepage design",
       run: "Three visual routes, then logo and homepage revisions with you",
       so: "Give your web team a design you’ve already signed off on." },
@@ -214,9 +214,8 @@ function mountSheet(root, { agents, host }) {
   // ---------- idle loops: animated stills with true alpha ----------
   // Buzz plays no website video, so each loop is an animated WebP. The still
   // is the loop's own first frame, so the swap is the same instant flip.
-  const loopUrl = (id) => `${ASSETS}/loops/${id}.webp`;
+  const loopUrl = (id) => id === FRED.id ? `${HOME}/art/loops/fred.webp` : `${ASSETS}/loops/${id}.webp`;
   function arm(img, id) {
-    if (id === FRED.id) return false;
     if (img.dataset.armed) return img.dataset.dead !== "1";
     img.dataset.armed = "1";
     img.addEventListener("error", () => { img.dataset.dead = "1"; }, { once: true });
@@ -423,7 +422,7 @@ function mountSheet(root, { agents, host }) {
     spotImg.src = `${HOME}/art/crew/${s.artwork || s.id}.png`;
     const anim = $("#spot-anim");
     anim.removeAttribute("src"); delete anim.dataset.armed; delete anim.dataset.dead;
-    if (s !== FRED && !reduced && arm(anim, s.id)) reveal(spotCard, anim, () => open === s && anim.dataset.dead !== "1");
+    if (!reduced && arm(anim, s.id)) reveal(spotCard, anim, () => open === s && anim.dataset.dead !== "1");
     spot.querySelector(".spot-close").focus();
   }
   function closeSpot() {

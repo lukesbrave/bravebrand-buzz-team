@@ -199,7 +199,7 @@ test('Standard has no Fred hire action',async()=>{
   assert.equal(button.hidden,false);
   assert.equal(button.nextElementSibling.dataset.seat,"salesrep");
   assert.equal(button.querySelector('.btext').textContent,'Fred (Graphic Designer)');
-  assert.match(button.querySelector('.fig img').src,/fred-chameleon-4d28c03d\.png$/);
+  assert.match(button.querySelector('.fig img').src,/fred-studio-loop\.png$/);
   button.click();
   assert.deepEqual([...f.root.querySelectorAll('#spot-stats dt')].map(el=>el.textContent),['You get','They run','So you']);
   assert.match(f.root.querySelector('#spot-stats').textContent,/Three visual routes/);
