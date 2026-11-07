@@ -16,7 +16,7 @@ const CLASSROOM = "https://www.skool.com/bravebrand/classroom";
 const classroomLink = (medium) => `${CLASSROOM}?utm_source=buzz&utm_medium=${medium}`;
 
 // Copy and geometry from the team sheet (index.html, SEATS and ROOMS).
-const FRED = { id: "fred", pack: "fred-design", role: "Fred (Graphic Designer)", slot: "l4",
+const FRED = { id: "fred", pack: "fred-design", role: "Graphic Designer", slot: "l4",
     stepName: "Step Seven", artwork: "fred-studio-loop", scale: 1.17, accent: "#8461c9",
     stats: { get: "Logo files, a brand deck and an editable homepage design",
       run: "Three visual routes, then logo and homepage revisions with you",
@@ -348,7 +348,7 @@ function mountSheet(root, { agents, host }) {
   let open = null, returnFocus = null, hiring = null, hireError = "";
 
   function renderSpotAct(s) {
-    $("#spot-name").textContent = s === FRED ? "Fred (Graphic Designer)" : s.role;
+    $("#spot-name").textContent = s.role;
     $("#spot-eyebrow").textContent = "Your agent";
     const act = $("#spot-act");
     const m = s.pack ? manifests[s.pack] : null;

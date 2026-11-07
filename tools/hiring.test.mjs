@@ -198,11 +198,12 @@ test('Standard has no Fred hire action',async()=>{
   const button=f.root.querySelector('[data-seat="fred"]');
   assert.equal(button.hidden,false);
   assert.equal(button.nextElementSibling.dataset.seat,"salesrep");
-  assert.equal(button.querySelector('.btext').textContent,'Fred (Graphic Designer)');
+  assert.equal(button.querySelector('.btext').textContent,'Graphic Designer');
   assert.match(button.querySelector('.fig img').src,/fred-studio-loop\.png$/);
   button.click();
   assert.deepEqual([...f.root.querySelectorAll('#spot-stats dt')].map(el=>el.textContent),['You get','They run','So you']);
   assert.match(f.root.querySelector('#spot-stats').textContent,/Three visual routes/);
+  assert.equal(f.root.querySelector('#spot-name').textContent,'Graphic Designer');
   assert.equal(f.root.querySelector('[data-hire="fred"]'),null);
  } finally {f.close();}
 });
