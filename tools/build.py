@@ -7,7 +7,6 @@ embedded because Buzz loads no web fonts.
 Usage: tools/build.py <assets-base-url>
 """
 import base64, io, json, pathlib, re, sys
-from PIL import Image
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -34,7 +33,7 @@ css += """
   .bb-scroll{height:100%;overflow:auto}
   .anim:not([src]){visibility:hidden}
   #gate{display:flex;gap:8px;align-items:center}
-  #gate[hidden]{display:none}
+  #gate[hidden], #fred-hire[hidden]{display:none}
   #gate input{width:min(380px,42vw);height:34px;padding:0 12px;border-radius:99px;
     border:1.5px solid var(--gray30);font:500 13px "Teachers",sans-serif;color:var(--ink)}
   #gate input:focus{outline:none;border-color:var(--ink)}

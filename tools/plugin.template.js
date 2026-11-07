@@ -60,6 +60,8 @@ const SEATS = [
       so:'Walk into meetings that booked themselves.'},
     desc:'Politely relentless. Makes the calls, warms the leads, books the meetings, and never takes the third no personally. Still on the phone right now.' },
 ];
+const FRED = { id: "fred", pack: "fred-design", role: "Fred (Graphic Designer)", accent: "#8461c9",
+  desc: "Turns your approved Brand Playbook into visual identities and editable website designs." };
 const ROOMS = {
   strategist:'inset(0% 0% 70% 0%)',
   copywriter:'inset(30% 50% 47.5% 10%)',
@@ -92,6 +94,7 @@ const MARKUP = `
     <div class="rightcol">
       <div class="crew" id="crew"></div>
       <div id="progress" aria-label="Hiring progress"></div>
+      <button id="fred-hire" class="cta" type="button" hidden>Fred (Graphic Designer)</button>
     </div>
   </div></div>
 </main>
@@ -156,6 +159,7 @@ function mountSheet(root, { agents, host }) {
   const hired = (s) => {
     const names = agentNames();
     return !!(s.pack && displayOf(s) && (names.has(displayOf(s)) ||
+      (s === FRED && names.has("Fred (Graphic Designer)")) ||
       (s.pack === "blaze" && names.has("Blaze (Video Editor & Ads Manager)"))));
   };
   const agentName = (s) => (/^[A-Z][a-z]+(?= \()/.exec(displayOf(s)) || [displayOf(s) || s.role])[0];
@@ -325,6 +329,9 @@ function mountSheet(root, { agents, host }) {
   function renderAll() {
     if (!alive) return;
     SEATS.forEach(renderSeat);
+    const fredButton = $("#fred-hire");
+    fredButton.hidden = membership?.tier !== "premium";
+    fredButton.textContent = hired(FRED) ? "Fred (Graphic Designer) · On your team" : FRED.role;
     renderProgress();
     renderPulse();
     if (open) renderSpotAct(open);
@@ -408,10 +415,12 @@ function mountSheet(root, { agents, host }) {
     $(".bb-scroll").inert = true;
     spotCard.classList.remove("playing", "settled");
     spotCard.style.setProperty("--figscale", s.scale || 1);
-    spotImg.src = `${HOME}/art/crew/${s.id}.png`;
+    spotImg.hidden = s === FRED;
+    if (s !== FRED) spotImg.src = `${HOME}/art/crew/${s.id}.png`;
+    else spotImg.removeAttribute("src");
     const anim = $("#spot-anim");
     anim.removeAttribute("src"); delete anim.dataset.armed; delete anim.dataset.dead;
-    if (!reduced && arm(anim, s.id)) reveal(spotCard, anim, () => open === s && anim.dataset.dead !== "1");
+    if (s !== FRED && !reduced && arm(anim, s.id)) reveal(spotCard, anim, () => open === s && anim.dataset.dead !== "1");
     spot.querySelector(".spot-close").focus();
   }
   function closeSpot() {
@@ -439,6 +448,7 @@ function mountSheet(root, { agents, host }) {
     if (!hired(s)) return doHire(s, s.el.querySelector(".badge"));
     openSpot(s);
   });
+  on($("#fred-hire"), "click", () => { if (membership?.tier === "premium") openSpot(FRED); });
   on(spot, "submit", (e) => {
     const form = e.target.closest("form[data-unlock]");
     if (!form) return;
@@ -456,7 +466,7 @@ function mountSheet(root, { agents, host }) {
     if (e.target.closest("button[data-retry]")) { loadError = ""; boot(); return; }
     const button = e.target.closest("button[data-hire]");
     if (!button || button.disabled) return;
-    const s = SEATS.find((q) => q.id === button.dataset.hire);
+    const s = button.dataset.hire === FRED.id ? FRED : SEATS.find((q) => q.id === button.dataset.hire);
     if (s) doHire(s, null);
   });
 
@@ -496,7 +506,8 @@ function mountSheet(root, { agents, host }) {
   }
   async function doHire(s, anchor) {
     const m = manifests[s.pack];
-    if (!m || m.locked || hired(s) || hiring) return;
+    if (!m || m.locked || hired(s) || hiring || (s === FRED && membership?.tier !== "premium")) return;
+    const hireKey = key;
     const type = agents.types().find((t) => !t.remote && /claude/i.test(t.title));
     if (!type) return showHireError(s, "Switch on Claude under Settings → Agent setup first.");
     hiring = s.id; hireError = ""; renderAll();
@@ -505,13 +516,14 @@ function mountSheet(root, { agents, host }) {
       if (!card) {
         try { card = await json(`${HOME}/${key}/${s.pack}/${m.card}`); }
         catch { throw new Error(OFFLINE); }
+        if (hireKey !== key || !alive) { hiring = null; return; }
         if (card) cards[s.pack] = card;
       }
       const def = card && card.definition;
       if (!def || typeof def.systemPrompt !== "string" || !def.name) throw new Error("The employee card didn't load. Try again.");
       const firstEver = !SEATS.some(hired);
       await agents.port({ source: "shared", type: type.key, name: def.name,
-        picture: `${HOME}/art/${AVATARS[s.pack]}`, instructions: def.systemPrompt,
+        picture: s === FRED ? card.profile.avatarUrl : `${HOME}/art/${AVATARS[s.pack]}`, instructions: def.systemPrompt,
         ...(typeof def.model === "string" && def.model.trim() ? { config: { ...type.defaults().config, model: def.model } } : {}) });
       if (!alive) return;
       hiring = null;
@@ -555,13 +567,14 @@ function mountSheet(root, { agents, host }) {
   }
   const OFFLINE = "Couldn't reach BraveBrand. Check your internet connection, then try again.";
   async function boot() {
+    const requestedKey = key;
     renderAll();
     if (!/^[0-9a-f]{24}$/.test(key)) return;
     checking = true; loadError = ""; renderAll();
     let value;
     try { value = await json(`${HOME}/${key}/membership.json`); }
     catch { if (alive) { checking = false; loadError = OFFLINE; renderAll(); } return; }
-    if (!alive) return;
+    if (!alive || key !== requestedKey) return;
     checking = false;
     if (!value || !["premium", "standard"].includes(value.tier)) {
       membership = null; gateError = "That access link isn't recognised. Copy it again from your course.";
@@ -570,9 +583,12 @@ function mountSheet(root, { agents, host }) {
     }
     membership = value;
     renderAll();
-    await Promise.all(SEATS.filter((s) => s.pack).map(async (s) => {
+    const memberSeats = value.tier === "premium" ? [...SEATS, FRED] : SEATS;
+    await Promise.all(memberSeats.filter((s) => s.pack).map(async (s) => {
       try {
         const manifest = await json(`${HOME}/${key}/${s.pack}/manifest.json`);
+        if (!alive || key !== requestedKey) return;
+        if (s === FRED && !manifest) loadError = "Fred’s Premium card could not be loaded.";
         if (manifest && alive) { manifests[s.pack] = manifest; renderAll(); }
       } catch { if (alive) { loadError = OFFLINE; renderAll(); } }
     }));

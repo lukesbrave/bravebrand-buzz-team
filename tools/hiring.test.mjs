@@ -23,6 +23,11 @@ async function fixture(options={}) {
  const ctx={react:React,pages:{register:p=>page=p},agents:{snapshot:()=>({agents:saved}),subscribe:fn=>{subscribers.push(fn);return()=>{};},types:()=>options.types??[claude],port:async input=>{calls.push(input);if(options.portError)throw Error('Fixture hire failed');saved.push({name:input.name});subscribers.forEach(fn=>fn());return{notes:[]};}},host:{request:async({url})=>{
    requests++;if(options.offline)throw Error('Fixture offline');if(options.refused)return{status:403,body:'{}'};
    const path=new URL(url).pathname;
+   if(path.includes('/fred-design/')){
+     if(options.tier === 'standard') throw Error('Unexpected Standard request for Fred');
+     if(path.endsWith('/manifest.json'))return {status:200,body:JSON.stringify({display:'Fred',card:'1/fred.agent.json'})};
+     return {status:200,body:JSON.stringify({definition:{name:'Fred',model:'claude-opus-5-5',systemPrompt:'Fred instructions'},profile:{avatarUrl:'https://images.example/buzz.png'}})};
+   }
    if(options.upgrade){
      const premium=path.split('/')[1]==='2'.repeat(24);
      if(path.endsWith('/membership.json'))return{status:200,body:JSON.stringify({tier:premium?'premium':'standard'})};
@@ -163,4 +168,36 @@ test('published old plugin to corrected plugin preserves access and customised a
   await wait(()=>updated.querySelector('#spot-act').textContent.includes('on your team'));
   assert.equal(f.calls.length,0);
  }finally{f.close();}
+});
+
+test('Premium can hire Fred once or recognise the manual import', async()=>{
+ for(const names of [[],['Fred'],['Fred (Graphic Designer)']]){
+  const f=await fixture({names});
+  try{
+   const button=f.root.querySelector('#fred-hire');
+   await wait(()=>!button.hidden);
+   button.click();
+   if(!names.length){
+    await wait(()=>f.root.querySelector('[data-hire="fred"]'));
+    f.root.querySelector('[data-hire="fred"]').click();
+    await wait(()=>f.calls.length===1);
+    assert.equal(f.calls[0].config.model,'claude-opus-5-5');
+    assert.equal(f.calls[0].picture,'https://images.example/buzz.png');
+    assert.equal(f.calls[0].instructions,'Fred instructions');
+    button.click();
+   }
+   await wait(()=>f.root.querySelector('#spot-act').textContent.includes('on your team'));
+   assert.equal(f.root.querySelector('[data-hire="fred"]'),null);
+  } finally { f.close(); }
+ }
+});
+test('Standard has no Fred hire action',async()=>{
+ const f=await fixture({tier:'standard'});
+ try{
+  await wait(()=>f.root.querySelector('#tiername').textContent==='Standard');
+  const button=f.root.querySelector('#fred-hire');
+  assert.equal(button.hidden,true);
+  button.click();
+  assert.equal(f.root.querySelector('[data-hire="fred"]'),null);
+ } finally {f.close();}
 });
