@@ -174,7 +174,7 @@ test('Premium can hire Fred once or recognise the manual import', async()=>{
  for(const names of [[],['Fred'],['Fred (Graphic Designer)']]){
   const f=await fixture({names});
   try{
-   const button=f.root.querySelector('#fred-hire');
+   const button=f.root.querySelector('[data-seat="fred"]');
    await wait(()=>!button.hidden);
    button.click();
    if(!names.length){
@@ -195,8 +195,10 @@ test('Standard has no Fred hire action',async()=>{
  const f=await fixture({tier:'standard'});
  try{
   await wait(()=>f.root.querySelector('#tiername').textContent==='Standard');
-  const button=f.root.querySelector('#fred-hire');
-  assert.equal(button.hidden,true);
+  const button=f.root.querySelector('[data-seat="fred"]');
+  assert.equal(button.hidden,false);
+  assert.equal(button.nextElementSibling.dataset.seat,"salesrep");
+  assert.match(button.textContent,/Premium/);
   button.click();
   assert.equal(f.root.querySelector('[data-hire="fred"]'),null);
  } finally {f.close();}

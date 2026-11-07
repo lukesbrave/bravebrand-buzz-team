@@ -16,7 +16,10 @@ const CLASSROOM = "https://www.skool.com/bravebrand/classroom";
 const classroomLink = (medium) => `${CLASSROOM}?utm_source=buzz&utm_medium=${medium}`;
 
 // Copy and geometry from the team sheet (index.html, SEATS and ROOMS).
-const SEATS = [
+const FRED = { id: "fred", pack: "fred-design", role: "Fred (Graphic Designer)", slot: "l4",
+    stepName: "Premium", accent: "#8461c9",
+    desc: "Fred turns your approved Brand Playbook into visual identities and editable website designs." };
+  const SEATS = [
   { id:'architect', pack:'architect', role:'Digital Home Manager', slot:'l1',
     stepName:'Step One', accent:'#4a7fb5', scale:1.1,
     stats:{get:'A backend, site and CRM on accounts you own',
@@ -53,15 +56,14 @@ const SEATS = [
       run:'Included editing tools, your editor, and Meta ad setup',
       so:'Drop in a video. Get a finished edit back.'},
     desc:'Drop a video into Buzz, tell Blaze what you want, and he can get to work. His included tools help trim footage, turn longer recordings into clips, add captions and export finished videos. Prefer your own editor? He can help connect your existing workflow and guide you through setup. He also helps connect Meta and prepare ads for your review. Blaze checks the video tools are ready and helps with any setup first.' },
-  { id:'salesrep', pack:null, role:'Sales Manager', slot:'c',
-    stepName:'Step Seven', accent:'#6b7d3f',
+    FRED,
+    { id:'salesrep', pack:null, role:'Sales Manager', slot:'c',
+    stepName:'Step Eight', accent:'#6b7d3f',
     stats:{get:'Booked calls on a calendar that syncs itself',
       run:'Pipeline, reminders, follow-ups, no-shows',
       so:'Walk into meetings that booked themselves.'},
     desc:'Politely relentless. Makes the calls, warms the leads, books the meetings, and never takes the third no personally. Still on the phone right now.' },
 ];
-const FRED = { id: "fred", pack: "fred-design", role: "Fred (Graphic Designer)", accent: "#8461c9",
-  desc: "Turns your approved Brand Playbook into visual identities and editable website designs." };
 const ROOMS = {
   strategist:'inset(0% 0% 70% 0%)',
   copywriter:'inset(30% 50% 47.5% 10%)',
@@ -71,7 +73,7 @@ const ROOMS = {
   funnel:    'inset(73% 50% 3% 10%)',
   adsmanager:'inset(73% 10% 3% 50%)',
 };
-const INTRO = 'Seven employees run your Digital Home. Hire them in order, starting with your Digital Home Manager. Press Employ Me and say hello.';
+const INTRO = 'Eight employees run your Digital Home. Hire them in order, starting with your Digital Home Manager. Press Employ Me and say hello.';
 
 const MARKUP = `
 <div class="bb-root">
@@ -94,7 +96,7 @@ const MARKUP = `
     <div class="rightcol">
       <div class="crew" id="crew"></div>
       <div id="progress" aria-label="Hiring progress"></div>
-      <button id="fred-hire" class="cta" type="button" hidden>Fred (Graphic Designer)</button>
+
     </div>
   </div></div>
 </main>
@@ -177,6 +179,7 @@ function mountSheet(root, { agents, host }) {
   // ---------- rooms ----------
   const house = $("#house");
   for (const s of SEATS) {
+    if (!ROOMS[s.id]) continue;
     const img = document.createElement("img");
     img.className = "room"; img.dataset.room = s.id; img.alt = "";
     img.src = `${HOME}/art/house-busy.png`;
@@ -210,6 +213,7 @@ function mountSheet(root, { agents, host }) {
   // is the loop's own first frame, so the swap is the same instant flip.
   const loopUrl = (id) => `${ASSETS}/loops/${id}.webp`;
   function arm(img, id) {
+    if (id === FRED.id) return false;
     if (img.dataset.armed) return img.dataset.dead !== "1";
     img.dataset.armed = "1";
     img.addEventListener("error", () => { img.dataset.dead = "1"; }, { once: true });
@@ -322,6 +326,7 @@ function mountSheet(root, { agents, host }) {
     } else {
       btext.textContent = s.role;
     }
+    if (s === FRED && membership?.tier !== "premium") btext.textContent = "Fred · Graphic Designer · Premium";
     const r = roomEl(s.id);
     if (r) r.classList.toggle("on", hired(s) || !!s.hovering);
     s.el.setAttribute("aria-label", `${s.role}${hired(s) ? ", on your team" : ""}`);
@@ -329,9 +334,6 @@ function mountSheet(root, { agents, host }) {
   function renderAll() {
     if (!alive) return;
     SEATS.forEach(renderSeat);
-    const fredButton = $("#fred-hire");
-    fredButton.hidden = membership?.tier !== "premium";
-    fredButton.textContent = hired(FRED) ? "Fred (Graphic Designer) · On your team" : FRED.role;
     renderProgress();
     renderPulse();
     if (open) renderSpotAct(open);
@@ -344,7 +346,7 @@ function mountSheet(root, { agents, host }) {
   let open = null, returnFocus = null, hiring = null, hireError = "";
 
   function renderSpotAct(s) {
-    $("#spot-name").textContent = s.role;
+    $("#spot-name").textContent = s === FRED ? "Fred (Graphic Designer)" : s.role;
     $("#spot-eyebrow").textContent = "Your agent";
     const act = $("#spot-act");
     const m = s.pack ? manifests[s.pack] : null;
@@ -415,9 +417,7 @@ function mountSheet(root, { agents, host }) {
     $(".bb-scroll").inert = true;
     spotCard.classList.remove("playing", "settled");
     spotCard.style.setProperty("--figscale", s.scale || 1);
-    spotImg.hidden = s === FRED;
-    if (s !== FRED) spotImg.src = `${HOME}/art/crew/${s.id}.png`;
-    else spotImg.removeAttribute("src");
+    spotImg.src = `${HOME}/art/crew/${s.id}.png`;
     const anim = $("#spot-anim");
     anim.removeAttribute("src"); delete anim.dataset.armed; delete anim.dataset.dead;
     if (s !== FRED && !reduced && arm(anim, s.id)) reveal(spotCard, anim, () => open === s && anim.dataset.dead !== "1");
@@ -448,7 +448,7 @@ function mountSheet(root, { agents, host }) {
     if (!hired(s)) return doHire(s, s.el.querySelector(".badge"));
     openSpot(s);
   });
-  on($("#fred-hire"), "click", () => { if (membership?.tier === "premium") openSpot(FRED); });
+
   on(spot, "submit", (e) => {
     const form = e.target.closest("form[data-unlock]");
     if (!form) return;
@@ -466,7 +466,7 @@ function mountSheet(root, { agents, host }) {
     if (e.target.closest("button[data-retry]")) { loadError = ""; boot(); return; }
     const button = e.target.closest("button[data-hire]");
     if (!button || button.disabled) return;
-    const s = button.dataset.hire === FRED.id ? FRED : SEATS.find((q) => q.id === button.dataset.hire);
+    const s = SEATS.find((q) => q.id === button.dataset.hire);
     if (s) doHire(s, null);
   });
 
@@ -583,7 +583,8 @@ function mountSheet(root, { agents, host }) {
     }
     membership = value;
     renderAll();
-    const memberSeats = value.tier === "premium" ? [...SEATS, FRED] : SEATS;
+    const memberSeats = value.tier === "premium" ? SEATS : SEATS.filter(s => s !== FRED);
+    if (value.tier === "standard") { manifests[FRED.pack] = {locked: true}; renderAll(); }
     await Promise.all(memberSeats.filter((s) => s.pack).map(async (s) => {
       try {
         const manifest = await json(`${HOME}/${key}/${s.pack}/manifest.json`);
