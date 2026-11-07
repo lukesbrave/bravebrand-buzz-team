@@ -17,7 +17,7 @@ const classroomLink = (medium) => `${CLASSROOM}?utm_source=buzz&utm_medium=${med
 
 // Copy and geometry from the team sheet (index.html, SEATS and ROOMS).
 const FRED = { id: "fred", pack: "fred-design", role: "Fred (Graphic Designer)", slot: "l4",
-    stepName: "Premium", accent: "#8461c9",
+    stepName: "Step Seven", artwork: "fred-chameleon-4d28c03d", accent: "#8461c9",
     desc: "Fred turns your approved Brand Playbook into visual identities and editable website designs." };
   const SEATS = [
   { id:'architect', pack:'architect', role:'Digital Home Manager', slot:'l1',
@@ -198,7 +198,7 @@ function mountSheet(root, { agents, host }) {
     b.setAttribute("aria-label", s.role);
     b.innerHTML = `
       <span class="fig" style="${s.scale ? `--figscale:${s.scale}` : ""}">
-        <img src="${HOME}/art/crew/${s.id}.png" alt="">
+        <img src="${HOME}/art/crew/${s.artwork || s.id}.png" alt="">
         <img class="anim" alt="">
       </span>
       <span class="srole labelfont">${s.role}</span>
@@ -326,7 +326,7 @@ function mountSheet(root, { agents, host }) {
     } else {
       btext.textContent = s.role;
     }
-    if (s === FRED && membership?.tier !== "premium") btext.textContent = "Fred · Graphic Designer · Premium";
+    if (s === FRED && membership?.tier !== "premium") btext.textContent = s.role;
     const r = roomEl(s.id);
     if (r) r.classList.toggle("on", hired(s) || !!s.hovering);
     s.el.setAttribute("aria-label", `${s.role}${hired(s) ? ", on your team" : ""}`);
@@ -417,7 +417,7 @@ function mountSheet(root, { agents, host }) {
     $(".bb-scroll").inert = true;
     spotCard.classList.remove("playing", "settled");
     spotCard.style.setProperty("--figscale", s.scale || 1);
-    spotImg.src = `${HOME}/art/crew/${s.id}.png`;
+    spotImg.src = `${HOME}/art/crew/${s.artwork || s.id}.png`;
     const anim = $("#spot-anim");
     anim.removeAttribute("src"); delete anim.dataset.armed; delete anim.dataset.dead;
     if (s !== FRED && !reduced && arm(anim, s.id)) reveal(spotCard, anim, () => open === s && anim.dataset.dead !== "1");

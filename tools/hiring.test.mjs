@@ -198,7 +198,8 @@ test('Standard has no Fred hire action',async()=>{
   const button=f.root.querySelector('[data-seat="fred"]');
   assert.equal(button.hidden,false);
   assert.equal(button.nextElementSibling.dataset.seat,"salesrep");
-  assert.match(button.textContent,/Premium/);
+  assert.equal(button.querySelector('.btext').textContent,'Fred (Graphic Designer)');
+  assert.match(button.querySelector('.fig img').src,/fred-chameleon-4d28c03d\.png$/);
   button.click();
   assert.equal(f.root.querySelector('[data-hire="fred"]'),null);
  } finally {f.close();}
