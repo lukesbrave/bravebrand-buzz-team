@@ -68,8 +68,25 @@ for(const mobile of [false,true]) {
      await f.hire();assert.equal(f.calls.length,1);
    }finally{f.close();}
  });
- for(const types of [[],[{key:'codex',title:'Codex',remote:false}],[{...claude,remote:true}]])test(`${mobile?'narrow':'wide'}: refuses unavailable local Claude ${JSON.stringify(types)}`,async()=>{
-   const f=await fixture({mobile,types});try{await f.hire();await wait(()=>f.root.querySelector('#spotlight').classList.contains('open'));assert.match(f.root.querySelector('#spot-act').textContent,/Switch on Claude/);assert.equal(f.calls.length,0);}finally{f.close();}
+ for(const key of ['buzz.goose/goose','buzz.codex/codex'])test(`${mobile?'narrow':'wide'}: hire on ${key} with its own defaults`,async()=>{
+   const f=await fixture({mobile,types:[{key,title:key,remote:false}]});try{
+     await f.hire();await wait(()=>f.root.querySelector('[aria-label*="on your team"]'));
+     assert.equal(f.calls[0].type,key);assert.equal(Object.hasOwn(f.calls[0],'config'),false);
+     assert.equal(f.calls[0].instructions,f.card.definition.systemPrompt);await f.hire();assert.equal(f.calls.length,1);
+   }finally{f.close();}
+ });
+ test(`${mobile?'narrow':'wide'}: member can choose Goose alongside Claude`,async()=>{
+   const goose={key:'buzz.goose/goose',title:'Goose',remote:false};
+   const f=await fixture({mobile,types:[claude,goose]});try{
+     await wait(()=>f.root.querySelector('#tier').hidden===false);
+     f.root.querySelector('[aria-label^="Digital Home Manager"]').click();
+     await wait(()=>f.root.querySelector('[data-type="buzz.goose/goose"]'));
+     assert.equal(f.calls.length,0);f.root.querySelector('[data-type="buzz.goose/goose"]').click();
+     await wait(()=>f.calls.length===1);assert.equal(f.calls[0].type,goose.key);assert.equal(Object.hasOwn(f.calls[0],'config'),false);
+   }finally{f.close();}
+ });
+ for(const types of [[],[{key:'buzz.builderlab/builderlab',title:'Builderlab',remote:false}],[{...claude,remote:true}]])test(`${mobile?'narrow':'wide'}: refuses unsupported or remote setups ${JSON.stringify(types)}`,async()=>{
+   const f=await fixture({mobile,types});try{await f.hire();await wait(()=>f.root.querySelector('#spotlight').classList.contains('open'));assert.match(f.root.querySelector('#spot-act').textContent,/Connect Goose/);assert.equal(f.calls.length,0);}finally{f.close();}
  });
  test(`${mobile?'narrow':'wide'}: import failure visible and retry available`,async()=>{
    const f=await fixture({mobile,portError:true});try{await f.hire();await wait(()=>f.root.querySelector('#spot-act').textContent.includes('Fixture hire failed'));assert.ok(f.root.querySelector('#spotlight').classList.contains('open'));assert.equal(f.root.querySelector('[data-hire="architect"]').disabled,false);}finally{f.close();}

@@ -10,7 +10,7 @@ Recruit your AI team to build and grow a Digital Home you own.
 4. Select **BraveBrand Team** in **dist**, review access, then install/enable.
 5. Open **BraveBrand Team** and enter your access link from the Skool classroom.
 
-Connect Claude in Buzz before recruiting. Standard and Premium members use the
+Connect Goose, Claude or Codex in **Settings → Agent setup** before recruiting. With Goose, hires use the provider and model you set in Buzz. Standard and Premium members use the
 same plugin. Membership access links are provided separately in the classroom.
 
 ## Already installed?

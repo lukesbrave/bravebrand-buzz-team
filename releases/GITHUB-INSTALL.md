@@ -10,7 +10,7 @@ https://github.com/lukesbrave/bravebrand-buzz-team
 
 Click Find, select BraveBrand Team in the dist folder, review access and
 install/enable it. Open BraveBrand Team and paste the access link from your
-classroom. Connect Claude before recruiting with this version.
+classroom. Connect Goose, Claude or Codex in **Settings → Agent setup** before recruiting. With Goose, hires use the provider and model you set in Buzz.
 
 Both membership tiers use this same repository. No ZIP or individual agent JSON
 download is needed. Keep existing employees and conversations; do not recruit

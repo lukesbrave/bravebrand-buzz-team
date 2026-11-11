@@ -347,6 +347,10 @@ function mountSheet(root, { agents, host }) {
   const spotImg = $("#spot-img");
   let open = null, returnFocus = null, hiring = null, hireError = "";
 
+  const claudeKey = "buzz.claude-code/claude-code";
+  const hireTypes = () => agents.types().filter(t => !t.remote &&
+    [claudeKey, "buzz.goose/goose", "buzz.codex/codex"].includes(t.key));
+
   function renderSpotAct(s) {
     $("#spot-name").textContent = s.role;
     $("#spot-eyebrow").textContent = "Your agent";
@@ -401,6 +405,21 @@ function mountSheet(root, { agents, host }) {
       return;
     }
     const busy = hiring === s.id;
+    const types = hireTypes();
+    if (!busy && types.length > 1) {
+      act.innerHTML = '<span class="spot-tiny">Choose the agent setup you use in Buzz.</span>';
+      for (const type of types) {
+        const button = document.createElement("button");
+        button.className = "cta"; button.dataset.hire = s.id; button.dataset.type = type.key;
+        button.textContent = "Employ with " + type.title;
+        act.appendChild(button);
+      }
+      if (hireError) {
+        const error = document.createElement("span");
+        error.className = "spot-tiny"; error.textContent = hireError; act.appendChild(error);
+      }
+      return;
+    }
     act.innerHTML = `<button class="cta" data-hire="${s.id}"${busy ? " disabled" : ""}>${busy ? "Hiring…" : "Employ Me"}</button>
       <span class="spot-tiny">${hireError || `${agentName(s)} joins this community straight away. Say hello in Buzz.`}</span>`;
   }
@@ -469,7 +488,7 @@ function mountSheet(root, { agents, host }) {
     const button = e.target.closest("button[data-hire]");
     if (!button || button.disabled) return;
     const s = SEATS.find((q) => q.id === button.dataset.hire);
-    if (s) doHire(s, null);
+    if (s) doHire(s, null, button.dataset.type);
   });
 
   // ---------- confetti ----------
@@ -506,12 +525,14 @@ function mountSheet(root, { agents, host }) {
     hireError = message;
     renderAll();
   }
-  async function doHire(s, anchor) {
+  async function doHire(s, anchor, selectedType) {
     const m = manifests[s.pack];
     if (!m || m.locked || hired(s) || hiring || (s === FRED && membership?.tier !== "premium")) return;
     const hireKey = key;
-    const type = agents.types().find((t) => !t.remote && /claude/i.test(t.title));
-    if (!type) return showHireError(s, "Switch on Claude under Settings → Agent setup first.");
+    const types = hireTypes();
+    if (!selectedType && types.length > 1) return openSpot(s);
+    const type = selectedType ? types.find(t => t.key === selectedType) : types[0];
+    if (!type) return showHireError(s, "Connect Goose, Claude or Codex under Settings → Agent setup, then try again.");
     hiring = s.id; hireError = ""; renderAll();
     try {
       let card = cards[s.pack];
@@ -526,7 +547,7 @@ function mountSheet(root, { agents, host }) {
       const firstEver = !SEATS.some(hired);
       await agents.port({ source: "shared", type: type.key, name: def.name,
         picture: s === FRED ? card.profile.avatarUrl : `${HOME}/art/${AVATARS[s.pack]}`, instructions: def.systemPrompt,
-        ...(typeof def.model === "string" && def.model.trim() ? { config: { ...type.defaults().config, model: def.model } } : {}) });
+        ...(type.key === claudeKey && typeof def.model === "string" && def.model.trim() ? { config: { ...type.defaults().config, model: def.model } } : {}) });
       if (!alive) return;
       hiring = null;
       if (open) closeSpot();

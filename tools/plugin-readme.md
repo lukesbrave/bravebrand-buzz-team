@@ -4,7 +4,7 @@ Each employee arrives with BraveBrand training for their role. Recruit them into
 
 ## Getting started
 
-1. Connect **Claude** in Buzz's agent setup.
+1. Connect Goose, Claude or Codex in **Settings → Agent setup** before recruiting. With Goose, hires use the provider and model you set in Buzz.
 2. Open **BraveBrand Team** from the sidebar.
 3. Paste your **access link** from the Skool classroom.
 4. Start with **Simon**: click **Employ Me**, find him in **Agents**, and say hello.
