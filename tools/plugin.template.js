@@ -11,6 +11,47 @@ const FONTS = /*FONTS*/[];
 const ICON = "/*ICON*/";
 const vpsType = "bravebrand.hire/vps-claude";
 
+function vpsSettings(React, send) {
+  const h = React.createElement;
+  return function Settings({agent, settingsHost, settingsContent, settingsSection}) {
+    const [catalog, setCatalog] = React.useState(null);
+    const [choice, setChoice] = React.useState("");
+    const [busy, setBusy] = React.useState(false);
+    const [error, setError] = React.useState("");
+    const [reload, setReload] = React.useState(0);
+    const pubkey = agent.pubkey, community = agent.relay;
+    React.useEffect(() => {
+      if (settingsSection === "identity") return;
+      let active = true;
+      setCatalog(null); setError(""); setBusy(false);
+      send("models", {pubkey, community}).then(result => {
+        if (active) { setCatalog(result); setChoice(result.selected); }
+      }).catch(e => { if (active) setError(e.message); });
+      return () => { active = false; };
+    }, [pubkey, community, reload, settingsSection]);
+    if (settingsSection === "identity") return settingsHost?.typeControl?.(false) || null;
+    async function apply() {
+      setBusy(true); setError("");
+      try {
+        const result = await send("set-model", {pubkey, community, config:{model:choice,base:catalog.selected}});
+        setCatalog({...catalog,selected:result.selected}); setChoice(result.selected);
+      } catch (e) { setError(e.message); }
+      finally { setBusy(false); }
+    }
+    return h("section", null, settingsContent,
+      h("label", null, "Model on My VPS ", h("select", {
+        value:choice, disabled:!catalog || busy, onChange:e=>setChoice(e.target.value)
+      }, catalog && !catalog.models.some(m=>m.id===catalog.selected)
+        ? h("option",{value:catalog.selected,disabled:true},catalog.selected+" (unavailable)") : null,
+      ...(catalog?.models || []).map(m=>h("option",{key:m.id,value:m.id},m.title)))),
+      !catalog && !error ? h("p",null,"Loading models from the VPS…") : null,
+      catalog && choice!==catalog.selected ? h("p",null,"Applying this change restarts the agent and interrupts any current reply.") : null,
+      h("button",{type:"button",disabled:busy || !catalog || choice===catalog.selected,onClick:apply},
+        busy ? "Applying…" : "Apply and restart agent"),
+      error ? h("p",{role:"alert"},error," ",h("button",{type:"button",onClick:()=>setReload(n=>n+1)},"Reload models")) : null);
+  };
+}
+
 async function connectVps(ctx) {
   const call = async (op, payload = {}) => {
     const raw = await ctx.host.runCommand("vps", JSON.stringify({ op, ...payload }));
@@ -31,6 +72,8 @@ async function connectVps(ctx) {
     title: "My VPS · Claude",
     description: "Claude runs on the server paired with this computer.",
     defaults: () => ({ config: {} }),
+    ...(status.modelSettings ? {tabs:[{id:"settings",title:"Settings",role:"settings",
+      splitSettings:true,component:vpsSettings(ctx.react,send)}]} : {}),
     remote: {
       provision: input => send("provision", input),
       activate: input => send("activate", input),
