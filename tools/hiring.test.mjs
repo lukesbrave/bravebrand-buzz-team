@@ -20,11 +20,16 @@ async function fixture(options={}) {
  const card={definition:{name:'Simon — Digital Home Manager',systemPrompt:'Unchanged fixture instructions.\nRetain exact bytes.',model:'opus'}};
  let saved=options.records ?? (options.names ? options.names.map(name=>({name})) : options.existing?[{name:card.definition.name}]:[]);
  let page,requests=0,manifestDone=false;const calls=[],subscribers=[];
- const ctx={react:React,pages:{register:p=>page=p},agents:{snapshot:()=>({agents:saved}),subscribe:fn=>{subscribers.push(fn);return()=>{};},types:()=>options.types??[claude],create:async input=>{
+ const ctx={react:React,pages:{register:p=>page=p},agents:{register:()=>{},snapshot:()=>({agents:saved}),subscribe:fn=>{subscribers.push(fn);return()=>{};},types:()=>options.types??[claude],create:async input=>{
    calls.push(input);
    if(options.remoteError)throw Error('VPS unavailable');
    saved.push({name:input.name});subscribers.forEach(fn=>fn());
- },port:async input=>{calls.push(input);if(options.portError)throw Error('Fixture hire failed');saved.push({name:input.name});subscribers.forEach(fn=>fn());return{notes:[]};}},host:{request:async({url})=>{
+ },port:async input=>{calls.push(input);if(options.portError)throw Error('Fixture hire failed');saved.push({name:input.name});subscribers.forEach(fn=>fn());return{notes:[]};}},host:{runCommand:async (_,payload)=>{
+   const {op}=JSON.parse(payload);
+   if(op==='status')return JSON.stringify({protocol:1,community:'wss://fixture.invalid',creationModels:true});
+   if(op==='creation-models')return JSON.stringify({models:[{id:'opus',title:'Opus'},{id:'sonnet',title:'Sonnet'}]});
+   throw Error('Unexpected bridge operation');
+ },request:async({url})=>{
    requests++;if(options.offline)throw Error('Fixture offline');if(options.refused)return{status:403,body:'{}'};
    const path=new URL(url).pathname;
    if(path.includes('/fred-design/')){
@@ -105,10 +110,16 @@ for (const remoteError of [false,true]) test(`explicit VPS choice (failure=${rem
    await wait(()=>f.root.querySelector('[data-type="bravebrand.hire/vps-claude"]'));
    assert.equal(f.calls.length,0);
    f.root.querySelector('[data-type="bravebrand.hire/vps-claude"]').click();
+   await wait(()=>f.root.querySelector('#vps-model'));
+   assert.equal(f.calls.length,0);
+   const select=f.root.querySelector('#vps-model');
+   assert.equal(select.value,'opus');
+   select.value='sonnet';select.dispatchEvent(new window.Event('change'));
+   f.root.querySelector('[data-confirm-vps]').click();
    await wait(()=>remoteError?f.root.querySelector('#spot-act').textContent.includes('VPS unavailable'):f.root.querySelector('[aria-label*="on your team"]'));
    assert.equal(f.calls.length,1);
    assert.equal(f.calls[0].type,remote.key);
-   assert.deepEqual(f.calls[0].config,{instructions:f.card.definition.systemPrompt,model:'opus'});
+   assert.deepEqual(f.calls[0].config,{instructions:f.card.definition.systemPrompt,model:'sonnet'});
  }finally{f.close();}
 });
 test('offline retries and preserves saved access',async()=>{const f=await fixture({offline:true});try{await wait(()=>f.root.textContent.includes("Couldn't reach BraveBrand"));assert.equal(f.requests(),3);assert.equal(localStorage.getItem('bravebrand.team.key'),'1'.repeat(24));assert.equal(f.calls.length,0);}finally{f.close();}});

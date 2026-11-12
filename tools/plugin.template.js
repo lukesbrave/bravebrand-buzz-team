@@ -21,7 +21,7 @@ function vpsSettings(React, send) {
     const [reload, setReload] = React.useState(0);
     const pubkey = agent.pubkey, community = agent.relay;
     React.useEffect(() => {
-      if (settingsSection === "identity") return;
+      if (settingsSection === "runtime") return;
       let active = true;
       setCatalog(null); setError(""); setBusy(false);
       send("models", {pubkey, community}).then(result => {
@@ -29,7 +29,7 @@ function vpsSettings(React, send) {
       }).catch(e => { if (active) setError(e.message); });
       return () => { active = false; };
     }, [pubkey, community, reload, settingsSection]);
-    if (settingsSection === "identity") return settingsHost?.typeControl?.(false) || null;
+    if (settingsSection === "runtime") return settingsContent || null;
     async function apply() {
       setBusy(true); setError("");
       try {
@@ -38,7 +38,7 @@ function vpsSettings(React, send) {
       } catch (e) { setError(e.message); }
       finally { setBusy(false); }
     }
-    return h("section", null, settingsContent,
+    return h("section", null, settingsHost?.typeControl?.(false),
       h("label", null, "Model on My VPS ", h("select", {
         value:choice, disabled:!catalog || busy, onChange:e=>setChoice(e.target.value)
       }, catalog && !catalog.models.some(m=>m.id===catalog.selected)
@@ -63,9 +63,9 @@ async function connectVps(ctx) {
   const status = await call("status");
   if (status.protocol !== 1) return;
   const send = (op, input) => {
-    const { community, pubkey, name, picture, config, auth } = input;
+    const { community, pubkey, name, picture, config, auth, instructions } = input;
     if (community !== status.community) throw new Error("My VPS is paired with a different community.");
-    return call(op, { community, pubkey, name, picture, config, auth });
+    return call(op, { community, pubkey, name, picture, config, auth, instructions });
   };
   ctx.agents.register({
     id: "vps-claude",
@@ -79,8 +79,13 @@ async function connectVps(ctx) {
       activate: input => send("activate", input),
       profile: input => send("profile", input),
       remove: input => send("remove", input),
+      ...(status.instructions ? {instructions:{
+        get: async input => (await send("instructions",input)).instructions,
+        set: async input => { await send("set-instructions",input); }
+      }} : {}),
     },
   });
+  return status.creationModels ? () => send("creation-models",{community:status.community}) : null;
 }
 
 const STORE = "bravebrand.team.key";
@@ -211,7 +216,7 @@ function loadFonts() {
 }
 
 // The team sheet's behaviour, scoped to one shadow root. Returns its cleanup.
-function mountSheet(root, { agents, host }) {
+function mountSheet(root, { agents, host, vpsCatalog }) {
   const $ = (sel) => root.querySelector(sel);
   const shell = $(".bb-root");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -421,6 +426,7 @@ function mountSheet(root, { agents, host }) {
   const spotImg = $("#spot-img");
   let open = null, returnFocus = null, hiring = null, hireError = "";
 
+  let modelDraft = null;
   const claudeKey = "buzz.claude-code/claude-code";
   const hireTypes = () => agents.types().filter(t => t.remote ? t.key === vpsType :
     [claudeKey, "buzz.goose/goose", "buzz.codex/codex"].includes(t.key));
@@ -480,6 +486,17 @@ function mountSheet(root, { agents, host }) {
     }
     const busy = hiring === s.id;
     const types = hireTypes();
+    if (!busy && modelDraft?.seat === s) {
+      act.innerHTML = '<label class="spot-tiny" for="vps-model">Model on My VPS</label><select id="vps-model"></select><button class="cta" data-confirm-vps>Hire on My VPS</button><button class="premium-secondary" data-back-vps>Back</button>';
+      const field = act.querySelector("select");
+      for (const model of modelDraft.models) {
+        const option = document.createElement("option");
+        option.value = model.id; option.textContent = model.title; field.appendChild(option);
+      }
+      field.value = modelDraft.model;
+      field.onchange = () => { modelDraft.model = field.value; };
+      return;
+    }
     if (!busy && types.length > 1) {
       act.innerHTML = '<span class="spot-tiny">Where should this agent work?</span>';
       for (const type of types) {
@@ -500,7 +517,7 @@ function mountSheet(root, { agents, host }) {
 
   function openSpot(s) {
     if (!open) returnFocus = root.activeElement;
-    if (open !== s) { hireError = ""; premiumEntry = false; }
+    if (open !== s) { modelDraft = null; hireError = ""; premiumEntry = false; }
     open = s;
     $("#spot-stats").innerHTML = s.stats
       ? `<div><dt>You get</dt><dd>${s.stats.get}</dd></div>
@@ -519,7 +536,7 @@ function mountSheet(root, { agents, host }) {
     spot.querySelector(".spot-close").focus();
   }
   function closeSpot() {
-    open = null; hireError = "";
+    open = null; modelDraft = null; hireError = "";
     spot.classList.remove("open");
     $(".bb-scroll").inert = false;
     if (returnFocus && returnFocus.isConnected) returnFocus.focus({ preventScroll: true });
@@ -530,7 +547,7 @@ function mountSheet(root, { agents, host }) {
     if (!open) return;
     if (e.key === "Escape") { e.preventDefault(); closeSpot(); return; }
     if (e.key !== "Tab") return;
-    const items = [...spot.querySelectorAll("button:not(:disabled),a[href],input:not(:disabled)")].filter((el) => el.getClientRects().length);
+    const items = [...spot.querySelectorAll("button:not(:disabled),a[href],select:not(:disabled),input:not(:disabled)")].filter((el) => el.getClientRects().length);
     const index = items.indexOf(root.activeElement);
     if (e.shiftKey && index <= 0) { e.preventDefault(); items[items.length - 1]?.focus(); }
     else if (!e.shiftKey && (index === items.length - 1 || index < 0)) { e.preventDefault(); items[0]?.focus(); }
@@ -551,6 +568,13 @@ function mountSheet(root, { agents, host }) {
     unlock(form.querySelector("input").value);
   });
   on(spot, "click", (e) => {
+    if (e.target.closest("[data-back-vps]")) { modelDraft = null; renderSpotAct(open); return; }
+    if (e.target.closest("[data-confirm-vps]") && modelDraft?.seat === open) {
+      const model = modelDraft.model;
+      modelDraft = null;
+      doHire(open,null,vpsType,model);
+      return;
+    }
     if (e.target.closest("button[data-premium-entry]")) {
       premiumEntry = true; renderSpotAct(open); $("#spotlink").focus(); return;
     }
@@ -599,7 +623,7 @@ function mountSheet(root, { agents, host }) {
     hireError = message;
     renderAll();
   }
-  async function doHire(s, anchor, selectedType) {
+  async function doHire(s, anchor, selectedType, selectedModel) {
     const m = manifests[s.pack];
     if (!m || m.locked || hired(s) || hiring || (s === FRED && membership?.tier !== "premium")) return;
     const hireKey = key;
@@ -607,6 +631,7 @@ function mountSheet(root, { agents, host }) {
     if (!selectedType && types.length > 1) return openSpot(s);
     const type = selectedType ? types.find(t => t.key === selectedType) : types[0];
     if (!type) return showHireError(s, "Connect Goose, Claude or Codex under Settings → Agent setup, then try again.");
+    if (type.key === vpsType && open !== s) openSpot(s);
     hiring = s.id; hireError = ""; renderAll();
     try {
       let card = cards[s.pack];
@@ -621,8 +646,20 @@ function mountSheet(root, { agents, host }) {
       const firstEver = !SEATS.some(hired);
       const picture = s === FRED ? card.profile.avatarUrl : `${HOME}/art/${AVATARS[s.pack]}`;
       if (type.key === vpsType) {
+        if (!selectedModel) {
+          const discover = await vpsCatalog;
+          if (!discover) throw new Error("Update the paired VPS adapter to load its models.");
+          const {models} = await discover();
+          hiring = null;
+          if (!alive || key !== hireKey || open !== s) { if (alive) renderAll(); return; }
+          if (!models?.length) throw new Error("The VPS did not offer any models.");
+          modelDraft = {seat:s, models, model:models.some(m=>m.id === def.model) ? def.model : models[0].id};
+          renderSpotAct(s);
+          $("#vps-model").focus();
+          return;
+        }
         await agents.create({ type: type.key, name: def.name, picture,
-          config: { instructions: def.systemPrompt, model: def.model || "" } });
+          config: { instructions: def.systemPrompt, model: selectedModel } });
       } else {
         await agents.port({ source: "shared", type: type.key, name: def.name, picture,
           instructions: def.systemPrompt,
@@ -718,7 +755,7 @@ const AVATARS = {
 
 export function apply(ctx) {
   const React = ctx.react;
-  if (ctx.host.runCommand) void connectVps(ctx).catch(() => {});
+  const vpsCatalog = ctx.host.runCommand ? connectVps(ctx).catch(() => null) : null;
   loadFonts();
   ctx.pages.register({
     id: "main",
@@ -732,7 +769,7 @@ export function apply(ctx) {
         const node = ref.current;
         const root = node.shadowRoot || node.attachShadow({ mode: "open" });
         root.innerHTML = `<style>${CSS}</style>${MARKUP}`;
-        return mountSheet(root, { agents: ctx.agents, host: ctx.host });
+        return mountSheet(root, { agents: ctx.agents, host: ctx.host, vpsCatalog });
       }, []);
       return React.createElement("div", { ref, style: { height: "100%", minHeight: 0, flex: 1 } });
     },
