@@ -491,8 +491,8 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
     act.innerHTML = `<div class="hire-picker">
       <div class="hire-question">Where should this agent work?
         <span class="hire-help"><button type="button" aria-label="Explain work locations" aria-expanded="false" aria-describedby="hire-help-text">?</button>
-        <span id="hire-help-text" role="tooltip" hidden><strong>This computer</strong>Keep this computer awake and online while the agent works.
-        <strong>Remote server</strong>The agent runs on your connected VPS, even when your laptop is closed.</span></span>
+        <span id="hire-help-text" role="tooltip" hidden><strong>This computer</strong>Choose this for work with files on this computer. Keep it awake and online while your agent works.
+        <strong>Remote server</strong>Choose this for work that should continue when your computer is off. Your agent can use files on your VPS and services you connect there.</span></span>
       </div>
       <div class="hire-locations" role="group" aria-label="Work location"></div>
       <label class="hire-tool">Run with <select></select></label>
@@ -520,9 +520,10 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
     for (const remote of [false,true]) {
       const button = document.createElement("button");
       button.type = "button";
-      button.textContent = remote ? "Remote server" : "This computer";
       button.dataset.location = remote ? "remote" : "local";
       button.disabled = !types.some(item => Boolean(item.remote) === remote);
+      button.textContent = remote ? "Remote server" :
+        button.disabled ? "This computer" : "This computer (recommended)";
       button.onclick = () => chooseLocation(remote);
       locations.appendChild(button);
     }
