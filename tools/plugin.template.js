@@ -29,7 +29,6 @@ async function connectVps(ctx) {
   ctx.agents.register({
     id: "vps-claude",
     title: "My VPS · Claude",
-    icon: ICON,
     description: "Claude runs on the server paired with this computer.",
     defaults: () => ({ config: {} }),
     remote: {
