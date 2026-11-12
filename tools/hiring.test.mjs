@@ -19,11 +19,13 @@ async function fixture(options={}) {
  window.HTMLCanvasElement.prototype.getContext=()=>({clearRect(){}});
  const card={definition:{name:'Simon — Digital Home Manager',systemPrompt:'Unchanged fixture instructions.\nRetain exact bytes.',model:'opus'}};
  let saved=options.records ?? (options.names ? options.names.map(name=>({name})) : options.existing?[{name:card.definition.name}]:[]);
+ let review;
  let page,requests=0,manifestDone=false;const calls=[],subscribers=[];
- const ctx={react:React,pages:{register:p=>page=p},agents:{register:()=>{},snapshot:()=>({agents:saved}),subscribe:fn=>{subscribers.push(fn);return()=>{};},types:()=>options.types??[claude],create:async input=>{
+ const ctx={react:React,bravebrandAgentControls:{AgentCreateDialog:props=>{review=props;return null;}},pages:{register:p=>page=p},agents:{register:()=>{},snapshot:()=>({agents:saved}),subscribe:fn=>{subscribers.push(fn);return()=>{};},types:()=>options.types??[claude],create:async input=>{
    calls.push(input);
    if(options.remoteError)throw Error('VPS unavailable');
-   saved.push({name:input.name});subscribers.forEach(fn=>fn());
+   const agent={name:input.name,relay:'wss://fixture.invalid',pubkey:'a'.repeat(64)};
+   saved.push(agent);subscribers.forEach(fn=>fn());return agent;
  },port:async input=>{calls.push(input);if(options.portError)throw Error('Fixture hire failed');saved.push({name:input.name});subscribers.forEach(fn=>fn());return{notes:[]};}},host:{runCommand:async (_,payload)=>{
    const {op}=JSON.parse(payload);
    if(op==='status')return JSON.stringify({protocol:1,community:'wss://fixture.invalid',creationModels:true});
@@ -68,7 +70,7 @@ async function fixture(options={}) {
    next.apply(ctx);
    return reopen();
  };
- return{root,calls,card,hire,close,reopen,replacePlugin,requests:()=>requests};
+ return{root,calls,card,hire,close,reopen,replacePlugin,review:()=>review,requests:()=>requests};
 }
 for(const mobile of [false,true]) {
  for(const tier of ['standard','premium'])test(`${mobile?'narrow':'wide'} ${tier}: exact instructions and Opus, then no duplicate`,async()=>{
@@ -110,13 +112,15 @@ for (const remoteError of [false,true]) test(`explicit VPS choice (failure=${rem
    await wait(()=>f.root.querySelector('[data-type="bravebrand.hire/vps-claude"]'));
    assert.equal(f.calls.length,0);
    f.root.querySelector('[data-type="bravebrand.hire/vps-claude"]').click();
-   await wait(()=>f.root.querySelector('#vps-model'));
+   await wait(()=>f.review());
    assert.equal(f.calls.length,0);
-   const select=f.root.querySelector('#vps-model');
-   assert.equal(select.value,'opus');
-   select.value='sonnet';select.dispatchEvent(new window.Event('change'));
-   f.root.querySelector('[data-confirm-vps]').click();
-   await wait(()=>remoteError?f.root.querySelector('#spot-act').textContent.includes('VPS unavailable'):f.root.querySelector('[aria-label*="on your team"]'));
+   const {draft,types,onCreate,onCreated} = f.review();
+   assert.equal(draft.instructions,f.card.definition.systemPrompt);
+   const config=types[0].defaults().config;
+   assert.equal(config.model,'opus');
+   const submit=()=>onCreate({name:draft.name,type:types[0].key,picture:draft.picture,config:{...config,model:'sonnet'}});
+   if(remoteError) await assert.rejects(submit,/VPS unavailable/);
+   else { onCreated(await submit()); await wait(()=>f.root.querySelector('[aria-label*="on your team"]')); }
    assert.equal(f.calls.length,1);
    assert.equal(f.calls[0].type,remote.key);
    assert.deepEqual(f.calls[0].config,{instructions:f.card.definition.systemPrompt,model:'sonnet'});
