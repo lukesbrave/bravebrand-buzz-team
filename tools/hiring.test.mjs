@@ -143,6 +143,29 @@ for (const harness of ['claude','goose']) for (const remoteError of [false,true]
 });
 test('offline retries and preserves saved access',async()=>{const f=await fixture({offline:true});try{await wait(()=>f.root.textContent.includes("Couldn't reach BraveBrand"));assert.equal(f.requests(),3);assert.equal(localStorage.getItem('bravebrand.team.key'),'1'.repeat(24));assert.equal(f.calls.length,0);}finally{f.close();}});
 test('refused access clears saved link without hiring',async()=>{const f=await fixture({refused:true});try{await wait(()=>f.root.textContent.includes("isn't recognised"));assert.equal(localStorage.getItem('bravebrand.team.key'),null);assert.equal(f.calls.length,0);}finally{f.close();}});
+test('a hosted Simon can hire one local identity through the member card',async()=>{
+ const hosted={name:'Simon — Digital Home Manager',place:'hosted',type:'bravebrand.hire/vps-claude',relay:'wss://fixture.invalid',pubkey:'b'.repeat(64)};
+ const goose={key:'buzz.goose/goose',title:'Goose',remote:false,defaults:()=>({config:{}})};
+ const f=await fixture({records:[hosted],types:[goose]});
+ try {
+   await f.hire();
+   const add=()=>f.root.querySelector('[data-local-hire]');
+   await wait(add);add().click();await wait(()=>f.review());
+   assert.equal(f.review().community,hosted.relay);
+   assert.equal(f.review().draft.instructions,f.card.definition.systemPrompt);
+   assert.equal(f.review().types[0].key,goose.key);
+   assert.equal(f.calls.length,0);
+   const previous=f.review();previous.onClose();await wait(()=>add() && !add().disabled);
+   add().click();await wait(()=>f.review()!==previous);
+   const review=f.review();
+   const agent=await review.onCreate({type:goose.key,name:'My renamed local Simon'});
+   review.onCreated(agent);
+   await wait(()=>localStorage.getItem('bravebrand.team.seat.'+hosted.relay+'.architect.local')===agent.pubkey);
+   await f.hire();
+   assert.equal(add(),null);
+   assert.equal(f.calls.length,1);
+ } finally {f.close();}
+});
 test('existing Simon is not imported again',async()=>{const f=await fixture({existing:true});try{await f.hire();assert.equal(f.calls.length,0);assert.match(f.root.querySelector('#spot-act').textContent,/on your team/);}finally{f.close();}});
 
 for(const mobile of [false,true])test(`${mobile?'narrow':'wide'}: Standard to Premium unlock preserves Simon and hires Bob once`,async()=>{

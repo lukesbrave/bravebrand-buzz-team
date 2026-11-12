@@ -280,16 +280,24 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
   let premiumEntry = false;
 
   // Recognise the verified previous Blaze name without changing existing agents.
-  const agentNames = () => new Set(agents.snapshot().agents.map((a) => a.name));
   const displayOf = (s) => (s.pack && manifests[s.pack] && manifests[s.pack].display) || "";
-  const hired = (s) => {
-    const names = agentNames();
-    if (agents.snapshot().agents.some(a => a.pubkey && a.relay &&
-        a.pubkey === localStorage.getItem("bravebrand.team.seat."+a.relay+"."+s.pack))) return true;
-    return !!(s.pack && displayOf(s) && (names.has(displayOf(s)) ||
-      (s === FRED && names.has("Fred (Graphic Designer)")) ||
-      (s.pack === "blaze" && names.has("Blaze (Video Editor & Ads Manager)"))));
-  };
+  const localName = name => name + " · Local";
+  const seatKey = (relay, pack) => "bravebrand.team.seat."+relay+"."+pack;
+  function roleAgents(s) {
+    const display = displayOf(s);
+    if (!display) return [];
+    return agents.snapshot().agents.filter(a => a.name === display || a.name === localName(display) ||
+      (s === FRED && a.name === "Fred (Graphic Designer)") ||
+      (s.pack === "blaze" && a.name === "Blaze (Video Editor & Ads Manager)") ||
+      (a.pubkey && a.relay && [seatKey(a.relay,s.pack),seatKey(a.relay,s.pack)+".local"]
+        .some(k => a.pubkey === localStorage.getItem(k))));
+  }
+  const hired = s => roleAgents(s).length > 0;
+  function remoteForLocalHire(s) {
+    const members = roleAgents(s);
+    if (members.some(a => ![vpsClaude,vpsGoose].includes(a.type))) return undefined;
+    return members.find(a => a.place === "hosted" && a.relay && a.pubkey);
+  }
   const agentName = (s) => (/^[A-Z][a-z]+(?= \()/.exec(displayOf(s)) || [displayOf(s) || s.role])[0];
 
   // ---------- height: the board fills the page area like 100vh did ----------
@@ -525,6 +533,16 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
     }
     if (hired(s)) {
       act.innerHTML = `<span class="spot-tiny">${agentName(s)} is on your team in this community. Find them in Agents and say hello.</span>`;
+      if (remoteForLocalHire(s) && hireTypes().some(t=>!t.remote)) {
+        const add = document.createElement("button");
+        add.className = "cta"; add.dataset.localHire = s.id;
+        add.textContent = "Hire on this computer"; add.disabled = Boolean(hiring);
+        act.appendChild(add);
+      }
+      if (hireError) {
+        const error = document.createElement("span");
+        error.setAttribute("role","alert"); error.textContent = hireError; act.appendChild(error);
+      }
       return;
     }
     const busy = hiring === s.id;
@@ -608,6 +626,11 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
       spot.querySelector("[data-premium-entry]").focus(); return;
     }
     if (e.target.closest("button[data-retry]")) { loadError = ""; boot(); return; }
+    if (e.target.closest("button[data-local-hire]") && open) {
+      const hosted = remoteForLocalHire(open);
+      if (hosted) void doHire(open, null, undefined, hosted);
+      return;
+    }
     const button = e.target.closest("button[data-hire]");
     if (!button || button.disabled) return;
     const s = SEATS.find((q) => q.id === button.dataset.hire);
@@ -648,12 +671,12 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
     hireError = message;
     renderAll();
   }
-  async function doHire(s, anchor, selectedType) {
+  async function doHire(s, anchor, selectedType, hosted) {
     const m = manifests[s.pack];
-    if (!m || m.locked || hired(s) || hiring || (s === FRED && membership?.tier !== "premium")) return;
+    if (!m || m.locked || (hired(s) && !hosted) || hiring || (s === FRED && membership?.tier !== "premium")) return;
     const hireKey = key;
-    const types = hireTypes();
-    if (!selectedType && types.length > 1) return openSpot(s);
+    const types = hireTypes().filter(t => !hosted || !t.remote);
+    if (!hosted && !selectedType && types.length > 1) return openSpot(s);
     const type = selectedType ? types.find(t => t.key === selectedType) : types[0];
     if (!type) return showHireError(s, "Connect Goose, Claude or Codex under Settings → Agent setup, then try again.");
     if (type.remote && open !== s) openSpot(s);
@@ -670,7 +693,23 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
       if (!def || typeof def.systemPrompt !== "string" || !def.name) throw new Error("The employee card didn't load. Try again.");
       const firstEver = !SEATS.some(hired);
       const picture = s === FRED ? card.profile.avatarUrl : `${HOME}/art/${AVATARS[s.pack]}`;
-      if (type.remote) {
+      if (hosted) {
+        if (!alive || key !== hireKey || open !== s) { hiring = null; return; }
+        closeSpot();
+        const agent = await reviewHire({
+          agents, community:hosted.relay, types,
+          draft:{name:localName(def.name),picture,instructions:def.systemPrompt},
+          onCreate:input=>{
+            const current = remoteForLocalHire(s);
+            if (!alive || key !== hireKey || current?.key !== hosted.key || current?.pubkey !== hosted.pubkey ||
+                current?.relay !== hosted.relay || !types.some(t=>t.key===input.type))
+              throw new Error("Reopen the member card before hiring on this computer.");
+            return agents.create(input);
+          }
+        });
+        if (!agent) { hiring = null; if (alive) openSpot(s); return; }
+        localStorage.setItem(seatKey(agent.relay,s.pack)+".local",agent.pubkey);
+      } else if (type.remote) {
         const target = await pairing;
         if (!target?.creationModels) throw new Error("Update the paired VPS adapter to load its models.");
         if (!alive || key !== hireKey || open !== s) { hiring = null; return; }
@@ -685,7 +724,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
           }
         });
         if (!agent) { hiring = null; if (alive) openSpot(s); return; }
-        if (agent.pubkey && agent.relay) localStorage.setItem("bravebrand.team.seat."+agent.relay+"."+s.pack,agent.pubkey);
+        if (agent.pubkey && agent.relay) localStorage.setItem(seatKey(agent.relay,s.pack),agent.pubkey);
       } else {
         await agents.port({ source: "shared", type: type.key, name: def.name, picture,
           instructions: def.systemPrompt,
