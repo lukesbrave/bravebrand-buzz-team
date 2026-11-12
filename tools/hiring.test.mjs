@@ -20,7 +20,11 @@ async function fixture(options={}) {
  const card={definition:{name:'Simon — Digital Home Manager',systemPrompt:'Unchanged fixture instructions.\nRetain exact bytes.',model:'opus'}};
  let saved=options.records ?? (options.names ? options.names.map(name=>({name})) : options.existing?[{name:card.definition.name}]:[]);
  let page,requests=0,manifestDone=false;const calls=[],subscribers=[];
- const ctx={react:React,pages:{register:p=>page=p},agents:{snapshot:()=>({agents:saved}),subscribe:fn=>{subscribers.push(fn);return()=>{};},types:()=>options.types??[claude],port:async input=>{calls.push(input);if(options.portError)throw Error('Fixture hire failed');saved.push({name:input.name});subscribers.forEach(fn=>fn());return{notes:[]};}},host:{request:async({url})=>{
+ const ctx={react:React,pages:{register:p=>page=p},agents:{snapshot:()=>({agents:saved}),subscribe:fn=>{subscribers.push(fn);return()=>{};},types:()=>options.types??[claude],create:async input=>{
+   calls.push(input);
+   if(options.remoteError)throw Error('VPS unavailable');
+   saved.push({name:input.name});subscribers.forEach(fn=>fn());
+ },port:async input=>{calls.push(input);if(options.portError)throw Error('Fixture hire failed');saved.push({name:input.name});subscribers.forEach(fn=>fn());return{notes:[]};}},host:{request:async({url})=>{
    requests++;if(options.offline)throw Error('Fixture offline');if(options.refused)return{status:403,body:'{}'};
    const path=new URL(url).pathname;
    if(path.includes('/fred-design/')){
@@ -92,6 +96,21 @@ for(const mobile of [false,true]) {
    const f=await fixture({mobile,portError:true});try{await f.hire();await wait(()=>f.root.querySelector('#spot-act').textContent.includes('Fixture hire failed'));assert.ok(f.root.querySelector('#spotlight').classList.contains('open'));assert.equal(f.root.querySelector('[data-hire="architect"]').disabled,false);}finally{f.close();}
  });
 }
+for (const remoteError of [false,true]) test(`explicit VPS choice (failure=${remoteError})`, async()=>{
+ const remote={key:'bravebrand.hire/vps-claude',title:'My VPS · Claude',remote:true};
+ const f=await fixture({types:[claude,remote],remoteError});
+ try{
+   await wait(()=>f.root.querySelector('#tier').hidden===false);
+   f.root.querySelector('[aria-label^="Digital Home Manager"]').click();
+   await wait(()=>f.root.querySelector('[data-type="bravebrand.hire/vps-claude"]'));
+   assert.equal(f.calls.length,0);
+   f.root.querySelector('[data-type="bravebrand.hire/vps-claude"]').click();
+   await wait(()=>remoteError?f.root.querySelector('#spot-act').textContent.includes('VPS unavailable'):f.root.querySelector('[aria-label*="on your team"]'));
+   assert.equal(f.calls.length,1);
+   assert.equal(f.calls[0].type,remote.key);
+   assert.deepEqual(f.calls[0].config,{instructions:f.card.definition.systemPrompt,model:'opus'});
+ }finally{f.close();}
+});
 test('offline retries and preserves saved access',async()=>{const f=await fixture({offline:true});try{await wait(()=>f.root.textContent.includes("Couldn't reach BraveBrand"));assert.equal(f.requests(),3);assert.equal(localStorage.getItem('bravebrand.team.key'),'1'.repeat(24));assert.equal(f.calls.length,0);}finally{f.close();}});
 test('refused access clears saved link without hiring',async()=>{const f=await fixture({refused:true});try{await wait(()=>f.root.textContent.includes("isn't recognised"));assert.equal(localStorage.getItem('bravebrand.team.key'),null);assert.equal(f.calls.length,0);}finally{f.close();}});
 test('existing Simon is not imported again',async()=>{const f=await fixture({existing:true});try{await f.hire();assert.equal(f.calls.length,0);assert.match(f.root.querySelector('#spot-act').textContent,/on your team/);}finally{f.close();}});

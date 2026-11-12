@@ -9,6 +9,38 @@ const ASSETS = "/*ASSETS*/";
 const CSS = /*CSS*/"";
 const FONTS = /*FONTS*/[];
 const ICON = "/*ICON*/";
+const vpsType = "bravebrand.hire/vps-claude";
+
+async function connectVps(ctx) {
+  const call = async (op, payload = {}) => {
+    const raw = await ctx.host.runCommand("vps", JSON.stringify({ op, ...payload }));
+    if (!raw) throw new Error("Could not reach My VPS. Check the server connection and retry.");
+    const result = JSON.parse(raw);
+    if (result.error) throw new Error(result.error);
+    return result;
+  };
+  const status = await call("status");
+  if (status.protocol !== 1) return;
+  const send = (op, input) => {
+    const { community, pubkey, name, picture, config, auth } = input;
+    if (community !== status.community) throw new Error("My VPS is paired with a different community.");
+    return call(op, { community, pubkey, name, picture, config, auth });
+  };
+  ctx.agents.register({
+    id: "vps-claude",
+    title: "My VPS · Claude",
+    icon: ICON,
+    description: "Claude runs on the server paired with this computer.",
+    defaults: () => ({ config: {} }),
+    remote: {
+      provision: input => send("provision", input),
+      activate: input => send("activate", input),
+      profile: input => send("profile", input),
+      remove: input => send("remove", input),
+    },
+  });
+}
+
 const STORE = "bravebrand.team.key";
 // Any form of the tier link, or the bare 24-character key from it.
 const LINK = /(?:^|[^0-9a-f])([0-9a-f]{24})(?![0-9a-f])/i;
@@ -348,7 +380,7 @@ function mountSheet(root, { agents, host }) {
   let open = null, returnFocus = null, hiring = null, hireError = "";
 
   const claudeKey = "buzz.claude-code/claude-code";
-  const hireTypes = () => agents.types().filter(t => !t.remote &&
+  const hireTypes = () => agents.types().filter(t => t.remote ? t.key === vpsType :
     [claudeKey, "buzz.goose/goose", "buzz.codex/codex"].includes(t.key));
 
   function renderSpotAct(s) {
@@ -407,11 +439,11 @@ function mountSheet(root, { agents, host }) {
     const busy = hiring === s.id;
     const types = hireTypes();
     if (!busy && types.length > 1) {
-      act.innerHTML = '<span class="spot-tiny">Choose the agent setup you use in Buzz.</span>';
+      act.innerHTML = '<span class="spot-tiny">Where should this agent work?</span>';
       for (const type of types) {
         const button = document.createElement("button");
         button.className = "cta"; button.dataset.hire = s.id; button.dataset.type = type.key;
-        button.textContent = "Employ with " + type.title;
+        button.textContent = type.key === vpsType ? "My VPS · Claude" : "This computer · " + type.title;
         act.appendChild(button);
       }
       if (hireError) {
@@ -545,9 +577,16 @@ function mountSheet(root, { agents, host }) {
       const def = card && card.definition;
       if (!def || typeof def.systemPrompt !== "string" || !def.name) throw new Error("The employee card didn't load. Try again.");
       const firstEver = !SEATS.some(hired);
-      await agents.port({ source: "shared", type: type.key, name: def.name,
-        picture: s === FRED ? card.profile.avatarUrl : `${HOME}/art/${AVATARS[s.pack]}`, instructions: def.systemPrompt,
-        ...(type.key === claudeKey && typeof def.model === "string" && def.model.trim() ? { config: { ...type.defaults().config, model: def.model } } : {}) });
+      const picture = s === FRED ? card.profile.avatarUrl : `${HOME}/art/${AVATARS[s.pack]}`;
+      if (type.key === vpsType) {
+        await agents.create({ type: type.key, name: def.name, picture,
+          config: { instructions: def.systemPrompt, model: def.model || "" } });
+      } else {
+        await agents.port({ source: "shared", type: type.key, name: def.name, picture,
+          instructions: def.systemPrompt,
+          ...(type.key === claudeKey && typeof def.model === "string" && def.model.trim()
+            ? { config: { ...type.defaults().config, model: def.model } } : {}) });
+      }
       if (!alive) return;
       hiring = null;
       if (open) closeSpot();
@@ -637,6 +676,7 @@ const AVATARS = {
 
 export function apply(ctx) {
   const React = ctx.react;
+  if (ctx.host.runCommand) void connectVps(ctx).catch(() => {});
   loadFonts();
   ctx.pages.register({
     id: "main",

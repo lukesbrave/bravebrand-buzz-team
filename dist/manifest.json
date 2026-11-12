@@ -13,6 +13,25 @@
   "host": {
     "networkOrigins": [
       "https://home.bravebrand.com"
+    ],
+    "commands": [
+      {
+        "id": "vps",
+        "program": "ssh",
+        "args": [
+          "-T",
+          "-o",
+          "BatchMode=yes",
+          "-o",
+          "ConnectTimeout=3",
+          "-o",
+          "StrictHostKeyChecking=yes",
+          "bravebrand-my-vps",
+          "/opt/bravebrand/buzz-pilot/hires/bridge"
+        ],
+        "maxInputBytes": 65536,
+        "maxOutputBytes": 65536
+      }
     ]
   }
 }
