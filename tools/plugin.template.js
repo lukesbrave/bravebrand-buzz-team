@@ -9,7 +9,8 @@ const ASSETS = "/*ASSETS*/";
 const CSS = /*CSS*/"";
 const FONTS = /*FONTS*/[];
 const ICON = "/*ICON*/";
-const vpsType = "bravebrand.hire/vps-claude";
+const vpsClaude = "bravebrand.hire/vps-claude";
+const vpsGoose = "bravebrand.hire/vps-goose";
 
 function modelRow(React, ui, catalog, value, disabled, onChange) {
   const models = (catalog?.models || []).map(({id,title}) => ({id,label:title}));
@@ -94,36 +95,38 @@ async function connectVps(ctx) {
   };
   const status = await call("status");
   if (status.protocol !== 1) return;
-  const send = (op, input) => {
-    const { community, pubkey, name, picture, config, auth, instructions } = input;
-    if (community !== status.community) throw new Error("My VPS is paired with a different community.");
-    return call(op, { community, pubkey, name, picture, config, auth, instructions });
-  };
-  ctx.agents.register({
-    id: "vps-claude",
-    title: "My VPS · Claude",
-    description: "Claude runs on the server paired with this computer.",
-    defaults: () => ({ config:{ instructions:"", model:"" } }),
-    Create: ({config,onChange,disabled})=>ctx.react.createElement(ctx.bravebrandAgentControls.AgentInstructions,{
-      creation:true,value:config.instructions,disabled,
-      onChange:instructions=>onChange({...config,instructions})
-    }),
-    adopt: ({instructions},config) => ({...config,instructions:instructions ?? config.instructions}),
-    ...(status.creationModels ? {CreateConfiguration:creationFields(ctx.react,ctx.bravebrandAgentControls,
-      ()=>send("creation-models",{community:status.community}))} : {}),
-    ...(status.modelSettings ? {tabs:[{id:"settings",title:"Settings",role:"settings",
-      splitSettings:true,component:vpsSettings(ctx.react,ctx.bravebrandAgentControls,send)}]} : {}),
-    remote: {
-      provision: input => send("provision", input),
-      activate: input => send("activate", input),
-      profile: input => send("profile", input),
-      remove: input => send("remove", input),
-      ...(status.instructions ? {instructions:{
-        get: async input => (await send("instructions",input)).instructions,
-        set: async input => { await send("set-instructions",input); }
-      }} : {}),
-    },
-  });
+  for (const [harness,title] of status.goose ? [["claude","Claude"],["goose","Goose"]] : [["claude","Claude"]]) {
+    const send = (op, input) => {
+      const { community, pubkey, name, picture, config, auth, instructions } = input;
+      if (community !== status.community) throw new Error("My VPS is paired with a different community.");
+      return call(op, { harness, community, pubkey, name, picture, config, auth, instructions });
+    };
+    ctx.agents.register({
+      id: "vps-"+harness,
+      title: "My VPS · "+title,
+      description: title+" runs on the server paired with this computer.",
+      defaults: () => ({ config:{ instructions:"", model:"" } }),
+      Create: ({config,onChange,disabled})=>ctx.react.createElement(ctx.bravebrandAgentControls.AgentInstructions,{
+        creation:true,value:config.instructions,disabled,
+        onChange:instructions=>onChange({...config,instructions})
+      }),
+      adopt: ({instructions},config) => ({...config,instructions:instructions ?? config.instructions}),
+      ...(status.creationModels ? {CreateConfiguration:creationFields(ctx.react,ctx.bravebrandAgentControls,
+        ()=>send("creation-models",{community:status.community}))} : {}),
+      ...(status.modelSettings ? {tabs:[{id:"settings",title:"Settings",role:"settings",
+        splitSettings:true,component:vpsSettings(ctx.react,ctx.bravebrandAgentControls,send)}]} : {}),
+      remote: {
+        provision: input => send("provision", input),
+        activate: input => send("activate", input),
+        profile: input => send("profile", input),
+        remove: input => send("remove", input),
+        ...(status.instructions ? {instructions:{
+          get: async input => (await send("instructions",input)).instructions,
+          set: async input => { await send("set-instructions",input); }
+        }} : {}),
+      },
+    });
+  }
   return status;
 }
 
@@ -468,7 +471,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
   let open = null, returnFocus = null, hiring = null, hireError = "";
 
   const claudeKey = "buzz.claude-code/claude-code";
-  const hireTypes = () => agents.types().filter(t => t.remote ? t.key === vpsType :
+  const hireTypes = () => agents.types().filter(t => t.remote ? [vpsClaude, vpsGoose].includes(t.key) :
     [claudeKey, "buzz.goose/goose", "buzz.codex/codex"].includes(t.key));
 
   function renderSpotAct(s) {
@@ -531,7 +534,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
       for (const type of types) {
         const button = document.createElement("button");
         button.className = "cta"; button.dataset.hire = s.id; button.dataset.type = type.key;
-        button.textContent = type.key === vpsType ? "My VPS · Claude" : "This computer · " + type.title;
+        button.textContent = type.remote ? type.title : "This computer · " + type.title;
         act.appendChild(button);
       }
       if (hireError) {
@@ -653,7 +656,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
     if (!selectedType && types.length > 1) return openSpot(s);
     const type = selectedType ? types.find(t => t.key === selectedType) : types[0];
     if (!type) return showHireError(s, "Connect Goose, Claude or Codex under Settings → Agent setup, then try again.");
-    if (type.key === vpsType && open !== s) openSpot(s);
+    if (type.remote && open !== s) openSpot(s);
     hiring = s.id; hireError = ""; renderAll();
     try {
       let card = cards[s.pack];
@@ -667,14 +670,14 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
       if (!def || typeof def.systemPrompt !== "string" || !def.name) throw new Error("The employee card didn't load. Try again.");
       const firstEver = !SEATS.some(hired);
       const picture = s === FRED ? card.profile.avatarUrl : `${HOME}/art/${AVATARS[s.pack]}`;
-      if (type.key === vpsType) {
+      if (type.remote) {
         const target = await pairing;
         if (!target?.creationModels) throw new Error("Update the paired VPS adapter to load its models.");
         if (!alive || key !== hireKey || open !== s) { hiring = null; return; }
         closeSpot();
         const agent = await reviewHire({
           agents, community:target.community,
-          types:[{...type, defaults:()=>({config:{model:def.model || "",instructions:def.systemPrompt}})}],
+          types:[{...type, defaults:()=>({config:{model:type.key === vpsClaude ? def.model || "" : "",instructions:def.systemPrompt}})}],
           draft:{name:def.name,picture,instructions:def.systemPrompt},
           onCreate:input=>{
             if (!alive || key !== hireKey) throw new Error("Reopen the member card before hiring.");
