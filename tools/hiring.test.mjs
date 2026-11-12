@@ -92,9 +92,15 @@ for(const mobile of [false,true]) {
    const f=await fixture({mobile,types:[claude,goose]});try{
      await wait(()=>f.root.querySelector('#tier').hidden===false);
      f.root.querySelector('[aria-label^="Digital Home Manager"]').click();
-     await wait(()=>f.root.querySelector('[data-type="buzz.goose/goose"]'));
+     await wait(()=>f.root.querySelector('.hire-tool select'));
+     const select=f.root.querySelector('.hire-tool select');
+     select.value=goose.key;select.dispatchEvent(new window.Event('change'));
      assert.equal(f.calls.length,0);f.root.querySelector('[data-type="buzz.goose/goose"]').click();
-     await wait(()=>f.calls.length===1);assert.equal(f.calls[0].type,goose.key);assert.equal(Object.hasOwn(f.calls[0],'config'),false);
+     await wait(()=>f.review());
+     const review=f.review();assert.equal(f.calls.length,0);
+     assert.equal(review.types[0].key,goose.key);assert.equal(review.draft.instructions,f.card.definition.systemPrompt);
+     review.onCreated(await review.onCreate({type:goose.key,name:review.draft.name}));
+     assert.equal(f.calls[0].type,goose.key);
    }finally{f.close();}
  });
  for(const types of [[],[{key:'buzz.builderlab/builderlab',title:'Builderlab',remote:false}],[{...claude,remote:true}]])test(`${mobile?'narrow':'wide'}: refuses unsupported or remote setups ${JSON.stringify(types)}`,async()=>{
@@ -123,7 +129,12 @@ for (const harness of ['claude','goose']) for (const remoteError of [false,true]
  try{
    await wait(()=>f.root.querySelector('#tier').hidden===false);
    f.root.querySelector('[aria-label^="Digital Home Manager"]').click();
-   await wait(()=>f.root.querySelector(`[data-type="${remote.key}"]`));
+   await wait(()=>f.root.querySelector('[data-location="remote"]'));
+   const help=f.root.querySelector('.hire-help button');
+   help.click();assert.equal(help.getAttribute('aria-expanded'),'true');help.click();
+   assert.equal(f.root.querySelector('.hire-tool select').value,claude.key);
+   f.root.querySelector('[data-location="remote"]').click();
+   assert.equal(f.root.querySelector('.hire-tool select').value,remote.key);
    assert.equal(f.calls.length,0);
    f.root.querySelector(`[data-type="${remote.key}"]`).click();
    await wait(()=>f.review());

@@ -482,6 +482,75 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
   const hireTypes = () => agents.types().filter(t => t.remote ? [vpsClaude, vpsGoose].includes(t.key) :
     [claudeKey, "buzz.goose/goose", "buzz.codex/codex"].includes(t.key));
 
+  let chosenTool = "";
+  function renderHirePicker(act, seat, types) {
+    const tool = types.find(item => item.key === chosenTool) || types.find(item => !item.remote) || types[0];
+    chosenTool = tool.key;
+    const signature = JSON.stringify([seat.id,types.map(item => [item.key,item.title]),hireError]);
+    if (act.firstElementChild?.dataset.picker === signature) return;
+    act.innerHTML = `<div class="hire-picker">
+      <div class="hire-question">Where should this agent work?
+        <span class="hire-help"><button type="button" aria-label="Explain work locations" aria-expanded="false" aria-describedby="hire-help-text">?</button>
+        <span id="hire-help-text" role="tooltip" hidden><strong>This computer</strong>Keep this computer awake and online while the agent works.
+        <strong>Remote server</strong>The agent runs on your connected VPS, even when your laptop is closed.</span></span>
+      </div>
+      <div class="hire-locations" role="group" aria-label="Work location"></div>
+      <label class="hire-tool">Run with <select></select></label>
+      <button type="button" class="hire-continue">Continue <span aria-hidden="true">→</span></button>
+    </div>`;
+    const picker = act.firstElementChild;
+    picker.dataset.picker = signature;
+    const select = picker.querySelector("select");
+    const locations = picker.querySelector(".hire-locations");
+    const next = picker.querySelector(".hire-continue");
+    next.dataset.hire = seat.id;
+    function chooseLocation(remote) {
+      const choices = types.filter(item => Boolean(item.remote) === remote);
+      const current = choices.find(item => item.key === chosenTool) || choices[0];
+      select.replaceChildren(...choices.map(item => {
+        const opt = document.createElement("option");
+        opt.value = item.key;
+        opt.textContent = item.key === vpsClaude ? "Claude" : item.key === vpsGoose ? "Goose" : item.title;
+        return opt;
+      }));
+      chosenTool = select.value = next.dataset.type = current.key;
+      for (const button of locations.children)
+        button.setAttribute("aria-pressed", String(button.dataset.location === (remote ? "remote" : "local")));
+    }
+    for (const remote of [false,true]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = remote ? "Remote server" : "This computer";
+      button.dataset.location = remote ? "remote" : "local";
+      button.disabled = !types.some(item => Boolean(item.remote) === remote);
+      button.onclick = () => chooseLocation(remote);
+      locations.appendChild(button);
+    }
+    chooseLocation(Boolean(tool.remote));
+    select.onchange = () => { chosenTool = next.dataset.type = select.value; };
+    const help = picker.querySelector(".hire-help");
+    const trigger = help.querySelector("button");
+    const tip = help.querySelector('[role="tooltip"]');
+    let pinned = false;
+    function explain(show) {
+      tip.hidden = !show;
+      trigger.setAttribute("aria-expanded", String(show));
+      if (!show) pinned = false;
+    }
+    help.onpointerenter = e => { if (e.pointerType === "mouse") explain(true); };
+    help.onpointerleave = () => { if (!pinned && !trigger.matches(":focus-visible")) explain(false); };
+    trigger.onfocus = () => { if (trigger.matches(":focus-visible")) explain(true); };
+    trigger.onblur = () => explain(false);
+    trigger.onclick = () => { pinned = !pinned; explain(pinned); };
+    picker.onkeydown = e => {
+      if (e.key === "Escape" && !tip.hidden) { e.stopPropagation(); explain(false); }
+    };
+    if (hireError) {
+      const error = document.createElement("span");
+      error.setAttribute("role","alert"); error.textContent = hireError; picker.appendChild(error);
+    }
+  }
+
   function renderSpotAct(s) {
     $("#spot-name").textContent = s.role;
     $("#spot-eyebrow").textContent = "Your agent";
@@ -548,17 +617,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
     const busy = hiring === s.id;
     const types = hireTypes();
     if (!busy && types.length > 1) {
-      act.innerHTML = '<span class="spot-tiny">Where should this agent work?</span>';
-      for (const type of types) {
-        const button = document.createElement("button");
-        button.className = "cta"; button.dataset.hire = s.id; button.dataset.type = type.key;
-        button.textContent = type.remote ? type.title : "This computer · " + type.title;
-        act.appendChild(button);
-      }
-      if (hireError) {
-        const error = document.createElement("span");
-        error.className = "spot-tiny"; error.textContent = hireError; act.appendChild(error);
-      }
+      renderHirePicker(act, s, types);
       return;
     }
     act.innerHTML = `<button class="cta" data-hire="${s.id}"${busy ? " disabled" : ""}>${busy ? "Hiring…" : "Employ Me"}</button>
@@ -567,7 +626,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
 
   function openSpot(s) {
     if (!open) returnFocus = root.activeElement;
-    if (open !== s) { hireError = ""; premiumEntry = false; }
+    if (open !== s) { hireError = ""; premiumEntry = false; chosenTool = ""; }
     open = s;
     $("#spot-stats").innerHTML = s.stats
       ? `<div><dt>You get</dt><dd>${s.stats.get}</dd></div>
@@ -693,22 +752,24 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
       if (!def || typeof def.systemPrompt !== "string" || !def.name) throw new Error("The employee card didn't load. Try again.");
       const firstEver = !SEATS.some(hired);
       const picture = s === FRED ? card.profile.avatarUrl : `${HOME}/art/${AVATARS[s.pack]}`;
-      if (hosted) {
+      if (hosted || (selectedType && !type.remote)) {
         if (!alive || key !== hireKey || open !== s) { hiring = null; return; }
         closeSpot();
         const agent = await reviewHire({
-          agents, community:hosted.relay, types,
-          draft:{name:localName(def.name),picture,instructions:def.systemPrompt},
+          agents, community:hosted?.relay, types:hosted ? types : [type.key === claudeKey && def.model
+            ? {...type, defaults:()=>({config:{...type.defaults().config,model:def.model}})} : type],
+          draft:{name:hosted ? localName(def.name) : def.name,picture,instructions:def.systemPrompt},
           onCreate:input=>{
             const current = remoteForLocalHire(s);
-            if (!alive || key !== hireKey || current?.key !== hosted.key || current?.pubkey !== hosted.pubkey ||
-                current?.relay !== hosted.relay || !types.some(t=>t.key===input.type))
+            if (!alive || key !== hireKey || (hosted
+                ? current?.pubkey !== hosted.pubkey || current?.relay !== hosted.relay
+                : hired(s) || input.type !== type.key) || !types.some(t=>t.key===input.type))
               throw new Error("Reopen the member card before hiring on this computer.");
             return agents.create(input);
           }
         });
         if (!agent) { hiring = null; if (alive) openSpot(s); return; }
-        localStorage.setItem(seatKey(agent.relay,s.pack)+".local",agent.pubkey);
+        if (agent.relay && agent.pubkey) localStorage.setItem(seatKey(agent.relay,s.pack)+".local",agent.pubkey);
       } else if (type.remote) {
         const target = await pairing;
         if (!target?.creationModels) throw new Error("Update the paired VPS adapter to load its models.");

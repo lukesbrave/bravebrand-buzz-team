@@ -207,6 +207,22 @@
   .cta:hover{transform:translateY(-2px);filter:brightness(1.05);box-shadow:0 10px 24px #0004}
   .cta:active{transform:translateY(0)}
   .cta:disabled{cursor:not-allowed;opacity:.5;transform:none;box-shadow:none}
+  .hire-picker{display:grid;gap:12px;width:min(100%,390px);font:500 14px/1.45 "Teachers",sans-serif}
+  .hire-picker button,.hire-picker select{font:inherit;cursor:pointer}
+  .hire-question{position:relative;display:flex;gap:6px;align-items:center;font-weight:600}
+  .hire-help{display:inline-flex;align-items:center;padding:5px}
+  .hire-help button{width:22px;height:22px;padding:0;border:1px solid #9bb3c3;border-radius:50%;color:#bdd7e6;background:transparent}
+  .hire-help [role=tooltip]{position:absolute;z-index:3;left:0;bottom:100%;width:min(272px,100%);box-sizing:border-box;padding:13px 16px;background:#f1f6f8;border:1px solid #879cab;border-radius:10px;box-shadow:0 4px 18px #07162436;color:#203749;font-size:13px;font-weight:400}
+  .hire-help [hidden]{display:none}
+  .hire-help strong{display:block;color:#132a3a}.hire-help strong+strong,.hire-help strong:nth-of-type(2){margin-top:7px}
+  .hire-locations{display:flex;gap:3px;padding:3px;border:1px solid #41596b;border-radius:9px;background:#0d1e2e}
+  .hire-locations button{flex:1;border:0;border-radius:6px;background:transparent;color:#c4d2de;padding:7px 4px}
+  .hire-locations button[aria-pressed=true]{background:#304a5f;color:#fff}
+  .hire-locations button:disabled{opacity:.45;cursor:default}
+  .hire-tool{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#cfdfeb}
+  .hire-tool select{color-scheme:dark;color:#e9f3f9;background:#1a3246;border:1px solid #526879;border-radius:8px;padding:8px 10px;width:58%}
+  .hire-continue{justify-self:start;color:#102b3b;background:#bfdeef;border:0;border-radius:7px;padding:8px 15px;font-weight:600!important}
+  .hire-continue span{margin-left:6px}
   .spot-tiny{font-size:14px;line-height:1.5;color:#c3cfda}
   .spot-tiny a{color:var(--sky)}
   .update-link{background:none;border:0;color:var(--sky);text-decoration:underline;
