@@ -60,9 +60,9 @@ async function fixture(options={}) {
  const hire=async()=>{
    await wait(()=>manifestDone&&root.querySelector('#tier').hidden===false);
    // Wait for manifest continuations to render the seat, rather than using a delay.
-   if(options.mobile&&!options.existing)await wait(()=>root.querySelector('[aria-label^="Digital Home Manager"]').textContent.match(/Employ Me|Hired/));
    root.querySelector('[aria-label^="Digital Home Manager"]').click();
-   if(!options.mobile&&!saved.length){await wait(()=>root.querySelector('[data-hire="architect"]'));root.querySelector('[data-hire="architect"]').click();}
+   // A narrow page opens the member card first, as a wide one does.
+   if(!saved.length){await wait(()=>root.querySelector('[data-hire="architect"]'));root.querySelector('[data-hire="architect"]').click();}
  };
  const reopen=async()=>{flushSync(()=>reactRoot.render(null));flushSync(()=>reactRoot.render(React.createElement(page.component)));await wait(()=>container.firstChild?.shadowRoot);return container.firstChild.shadowRoot;};
  const replacePlugin=async()=>{
@@ -283,6 +283,8 @@ test('Premium can hire Fred once or recognise the manual import', async()=>{
     await wait(()=>f.calls.length===1);
     assert.equal(f.calls[0].config.model,'claude-opus-5-5');
     assert.equal(f.calls[0].picture,'https://images.example/buzz.png');
+    // The card says only "Fred"; the hire carries his role like the rest of the team.
+    assert.equal(f.calls[0].name,'Fred (Graphic Designer)');
     assert.equal(f.calls[0].instructions,'Fred instructions');
     button.click();
    }

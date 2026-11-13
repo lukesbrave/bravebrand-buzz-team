@@ -263,7 +263,6 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
   const shell = $(".bb-root");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const canHover = matchMedia("(hover: hover) and (pointer: fine)").matches;
-  const isMobile = () => shell.clientWidth <= 1100;
   const disposers = [];
   const on = (target, type, fn, opts) => {
     target.addEventListener(type, fn, opts);
@@ -282,12 +281,14 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
   // Recognise the verified previous Blaze name without changing existing agents.
   const displayOf = (s) => (s.pack && manifests[s.pack] && manifests[s.pack].display) || "";
   const localName = name => name + " · Local";
+  // A card named by first name alone is hired with its role, like the rest of the team.
+  const hireName = (s, name) => name.includes("(") || name.includes("—") ? name : `${name} (${s.role})`;
   const seatKey = (relay, pack) => "bravebrand.team.seat."+relay+"."+pack;
   function roleAgents(s) {
     const display = displayOf(s);
     if (!display) return [];
-    return agents.snapshot().agents.filter(a => a.name === display || a.name === localName(display) ||
-      (s === FRED && a.name === "Fred (Graphic Designer)") ||
+    const names = [display, hireName(s, display)].flatMap(name => [name, localName(name)]);
+    return agents.snapshot().agents.filter(a => names.includes(a.name) ||
       (s.pack === "blaze" && a.name === "Blaze (Video Editor & Ads Manager)") ||
       (a.pubkey && a.relay && [seatKey(a.relay,s.pack),seatKey(a.relay,s.pack)+".local"]
         .some(k => a.pubkey === localStorage.getItem(k))));
@@ -303,9 +304,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
   // ---------- height: the board fills the page area like 100vh did ----------
   const sizer = new ResizeObserver(() => {
     shell.style.setProperty("--bbvh", `${shell.clientHeight}px`);
-    if (isMobile() !== lastMobile) { lastMobile = isMobile(); renderAll(); }
   });
-  let lastMobile = isMobile();
   sizer.observe(shell);
   disposers.push(() => sizer.disconnect());
   shell.style.setProperty("--bbvh", `${shell.clientHeight}px`);
@@ -445,16 +444,9 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
   function renderSeat(s) {
     const badge = s.el.querySelector(".badge");
     const btext = badge.querySelector(".btext");
-    const m = s.pack ? manifests[s.pack] : null;
     badge.classList.toggle("hired", hired(s));
     badge.classList.remove("act", "soon", "fresh");
-    if (isMobile()) {
-      if (!s.pack) { btext.textContent = "In training"; badge.classList.add("soon"); }
-      else if (m && m.locked) { btext.textContent = "Unlock with Premium"; badge.classList.add("act"); }
-      else if (m && !hired(s)) { btext.textContent = "Employ Me"; badge.classList.add("act"); }
-      else if (hired(s)) { btext.innerHTML = HIRED_HTML; }
-      else { btext.textContent = s.stepName; }
-    } else if (hired(s)) {
+    if (hired(s)) {
       btext.innerHTML = HIRED_HTML;
     } else {
       btext.textContent = s.role;
@@ -662,14 +654,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
     if (e.shiftKey && index <= 0) { e.preventDefault(); items[items.length - 1]?.focus(); }
     else if (!e.shiftKey && (index === items.length - 1 || index < 0)) { e.preventDefault(); items[0]?.focus(); }
   });
-  for (const s of SEATS) on(s.el, "click", () => {
-    if (!isMobile() || !s.pack) return openSpot(s);
-    const m = manifests[s.pack];
-    if (!m) return openSpot(s);
-    if (m.locked) return openSpot(s);
-    if (!hired(s)) return doHire(s, s.el.querySelector(".badge"));
-    openSpot(s);
-  });
+  for (const s of SEATS) on(s.el, "click", () => openSpot(s));
 
   on(spot, "submit", (e) => {
     const form = e.target.closest("form[data-unlock]");
@@ -752,6 +737,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
       const def = card && card.definition;
       if (!def || typeof def.systemPrompt !== "string" || !def.name) throw new Error("The employee card didn't load. Try again.");
       const firstEver = !SEATS.some(hired);
+      const name = hireName(s, def.name);
       const picture = s === FRED ? card.profile.avatarUrl : `${HOME}/art/${AVATARS[s.pack]}`;
       if (hosted || (selectedType && !type.remote)) {
         if (!alive || key !== hireKey || open !== s) { hiring = null; return; }
@@ -759,7 +745,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
         const agent = await reviewHire({
           agents, community:hosted?.relay, types:hosted ? types : [type.key === claudeKey && def.model
             ? {...type, defaults:()=>({config:{...type.defaults().config,model:def.model}})} : type],
-          draft:{name:hosted ? localName(def.name) : def.name,picture,instructions:def.systemPrompt},
+          draft:{name:hosted ? localName(name) : name,picture,instructions:def.systemPrompt},
           onCreate:input=>{
             const current = remoteForLocalHire(s);
             if (!alive || key !== hireKey || (hosted
@@ -779,7 +765,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
         const agent = await reviewHire({
           agents, community:target.community,
           types:[{...type, defaults:()=>({config:{model:type.key === vpsClaude ? def.model || "" : "",instructions:def.systemPrompt}})}],
-          draft:{name:def.name,picture,instructions:def.systemPrompt},
+          draft:{name,picture,instructions:def.systemPrompt},
           onCreate:input=>{
             if (!alive || key !== hireKey) throw new Error("Reopen the member card before hiring.");
             return agents.create(input);
@@ -788,7 +774,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
         if (!agent) { hiring = null; if (alive) openSpot(s); return; }
         if (agent.pubkey && agent.relay) localStorage.setItem(seatKey(agent.relay,s.pack),agent.pubkey);
       } else {
-        await agents.port({ source: "shared", type: type.key, name: def.name, picture,
+        await agents.port({ source: "shared", type: type.key, name, picture,
           instructions: def.systemPrompt,
           ...(type.key === claudeKey && typeof def.model === "string" && def.model.trim()
             ? { config: { ...type.defaults().config, model: def.model } } : {}) });
@@ -798,7 +784,7 @@ function mountSheet(root, { agents, host, pairing, reviewHire }) {
       if (open) closeSpot();
       renderAll();
       const colors = [s.accent, "#16314c", s.accent, "#bbdcef"];
-      const target = (isMobile() && anchor) ? anchor : (roomEl(s.id) || house);
+      const target = roomEl(s.id) || house;
       const box = target.getBoundingClientRect(), frame = shell.getBoundingClientRect();
       burst(box.left - frame.left + box.width / 2, box.top - frame.top + box.height / 2, colors, firstEver ? 140 : 90);
       if (firstEver) {

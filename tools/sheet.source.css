@@ -323,43 +323,46 @@
     .cta:hover,.seat:hover .badge{transform:none}
   }
 
-  /* ---------- mobile: no hover layer, tap goes straight to spotlight ---------- */
+  /* ---------- narrower pages: the same page, scaled (Luke, 2026-11-13) ----------
+     Inside the app the page is often narrow on a desktop, because the sidebar
+     takes the rest of the window. The house and the meter stay at every
+     width; sizes follow the page's own width (cqw) and height. */
   @media(max-width:1100px){
-    .sheet{padding:40px 16px 56px;display:block;height:auto;min-height:0}
-    /* big two-line title with air above it (Luke, 2026-08-30) */
-    h1{display:block;font-size:clamp(42px,11vw,58px);line-height:1.04;
-      max-width:16ch;margin:0 auto}
-    /* the mobile invitation is the #pulse line; the header stays clean */
-    #headinvite{display:none}
-    #intro{display:block}
-    /* the intro is on the page here, so the info-i has nothing to add */
-    #info{display:none}
-    #pulse{display:block}
-    #pulse:empty{display:none}
-    .board{display:block}
-    /* mobile keeps it simple: no house, no side title, just the crew */
-    .center{display:block;height:auto;min-height:0;padding:0}
-    .housewrap,.aside,#progress{display:none}
-    .seat{max-width:none}
-    .rightcol{display:block;height:auto}
-    /* single column, hire order top to bottom - clear the desktop grid
-       placements or the slot rules keep pairing seats into extra columns */
-    .crew{display:grid;grid-template-columns:minmax(0,1fr);gap:58px;
-      margin-top:38px}
-    /* the seat spans the screen so the copy can breathe; only the figure
-       stays capped */
-    .seat[data-slot]{grid-column:auto;grid-row:auto;margin:0 auto;
-      width:100%;max-width:460px}
-    .seat .fig{width:min(62vw,240px);margin:0 auto}
-    /* role names read as real headings on phones, not captions */
-    .srole{display:block;margin:14px auto 0;text-align:center;
-      font-size:clamp(26px,7vw,32px);line-height:1.1;color:var(--ink)}
-    /* one step below the page intro (17px): title > intro > role > desc */
-    .sdesc{display:block;margin:8px auto 4px;width:100%;
-      font-size:15px;line-height:1.55;color:var(--ink);text-align:center}
-    .seat .badge{height:54px;min-width:180px;font-size:16px;
-      border-radius:10px;margin-top:14px}
-    .badge img{width:20px;height:20px}
+    .center{min-height:440px;padding:22px 16px 20px;gap:clamp(12px,3cqw,36px)}
+    /* the wrap hugs the house, so the news chip still sits on the roof */
+    .housewrap{flex:0 0 auto;height:auto;align-self:center}
+    #house{height:auto;width:min(40cqw,calc((100vh - 150px)*.75))}
+    .rightcol{flex:1 1 0;max-width:600px;gap:14px}
+    .crew{gap:clamp(8px,1.6cqw,20px) 8px}
+    .seat{max-width:min(170px,calc((100vh - 350px)/3))}
+    .seat .badge{min-width:0;max-width:100%;height:30px;padding:0 9px;
+      font-size:clamp(10px,1.45cqw,11.5px);white-space:nowrap}
+    #pulse2{font-size:12px;padding:6px 12px;white-space:normal;
+      text-align:center;width:max-content;max-width:92%}
+    /* the access-link form shares the header with the wordmark; #topbar
+       outranks the form's base rules, which the build appends after these */
+    #topbar #gate{flex:1;min-width:0;justify-content:flex-end;margin:0 12px}
+    #topbar #gate input{flex:0 1 300px;min-width:0;width:auto}
+    #topbar #gate button{white-space:nowrap}
+  }
+  @media(max-width:760px){
+    .brandline .pagename{display:none}
+  }
+  /* too narrow for the house beside the crew: house, meter, then crew */
+  @media(max-width:640px){
+    .center{display:block;height:auto;min-height:0;padding:36px 16px 28px}
+    .housewrap{display:flex;margin:0 auto 22px}
+    /* the access-link form takes its own row under the wordmark */
+    #topbar{height:auto;min-height:58px;flex-wrap:wrap;row-gap:8px;padding:10px 16px}
+    #topbar #gate{order:3;flex:1 0 100%;margin:0}
+    #topbar #gate input{flex:1 1 auto}
+    #house{width:min(76cqw,320px)}
+    .rightcol{height:auto;max-width:none;flex-direction:column-reverse;gap:22px}
+    .crew{margin:0}
+    .seat{max-width:150px}
+  }
+  @media(max-width:420px){
+    .crew{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
 
   .premium-title{margin:0;font-size:20px;line-height:1.35;font-weight:700;color:#f2f6fc}
