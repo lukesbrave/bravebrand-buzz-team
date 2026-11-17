@@ -85,26 +85,35 @@ function vpsSettings(React, ui, send) {
   };
 }
 
-async function connectVps(ctx) {
+// A server that runs agents for this computer's owner. `command` is the host
+// command that reaches it: the pilot's paired VPS, or the member's own
+// workspace server (scripts/workrooms-server/agents.sh in the Workrooms guide),
+// which names the harnesses it offers itself.
+async function connectServer(ctx, command, place) {
   const call = async (op, payload = {}) => {
-    const raw = await ctx.host.runCommand("vps", JSON.stringify({ op, ...payload }));
-    if (!raw) throw new Error("Could not reach My VPS. Check the server connection and retry.");
+    const raw = await ctx.host.runCommand(command, JSON.stringify({ op, ...payload }));
+    if (!raw) throw new Error("Could not reach "+place+". Check the server connection and retry.");
     const result = JSON.parse(raw);
     if (result.error) throw new Error(result.error);
     return result;
   };
   const status = await call("status");
   if (status.protocol !== 1) return;
-  for (const [harness,title] of status.goose ? [["claude","Claude"],["goose","Goose"]] : [["claude","Claude"]]) {
+  const own = Array.isArray(status.harnesses);
+  const harnesses = own ? status.harnesses :
+    status.goose ? [["claude","Claude"],["goose","Goose"]] : [["claude","Claude"]];
+  for (const [harness,title] of harnesses) {
     const send = (op, input) => {
       const { community, pubkey, name, picture, config, auth, instructions } = input;
-      if (community !== status.community) throw new Error("My VPS is paired with a different community.");
+      if (community !== status.community) throw new Error(place+" is paired with a different community.");
       return call(op, { harness, community, pubkey, name, picture, config, auth, instructions });
     };
     ctx.agents.register({
-      id: "vps-"+harness,
-      title: "My VPS · "+title,
-      description: title+" runs on the server paired with this computer.",
+      id: (own ? "server-" : "vps-")+harness,
+      title: place+" · "+title,
+      description: own
+        ? title+" runs on your workspace's server, so this agent keeps working while this computer is off. It cannot open files on this computer."
+        : title+" runs on the server paired with this computer.",
       defaults: () => ({ config:{ instructions:"", model:"" } }),
       Create: ({config,onChange,disabled})=>ctx.react.createElement(ctx.bravebrandAgentControls.AgentInstructions,{
         creation:true,value:config.instructions,disabled,
@@ -129,6 +138,7 @@ async function connectVps(ctx) {
   }
   return status;
 }
+const connectVps = ctx => connectServer(ctx, "vps", "My VPS");
 
 const STORE = "bravebrand.team.key";
 // Any form of the tier link, or the bare 24-character key from it.
@@ -869,6 +879,9 @@ const AVATARS = {
 export function apply(ctx) {
   const React = ctx.react;
   const pairing = ctx.host.runCommand ? connectVps(ctx).catch(() => null) : null;
+  // The member's own workspace server, when it runs agents. BraveBrand's own
+  // agents are still hired on this computer; these are agents the owner makes.
+  if (ctx.host.runCommand) void connectServer(ctx, "server", "My server").catch(() => null);
   loadFonts();
   ctx.pages.register({
     id: "main",

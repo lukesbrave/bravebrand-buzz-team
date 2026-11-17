@@ -31,6 +31,29 @@
         ],
         "maxInputBytes": 65536,
         "maxOutputBytes": 65536
+      },
+      {
+        "id": "server",
+        "program": "ssh",
+        "args": [
+          "-T",
+          "-o",
+          "BatchMode=yes",
+          "-o",
+          "ConnectTimeout=3",
+          "-o",
+          "StrictHostKeyChecking=yes",
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPath=~/.ssh/workrooms-%C",
+          "-o",
+          "ControlPersist=120",
+          "workrooms",
+          "sh /opt/workrooms/agents.sh bridge"
+        ],
+        "maxInputBytes": 65536,
+        "maxOutputBytes": 65536
       }
     ]
   }

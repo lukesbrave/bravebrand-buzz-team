@@ -26,8 +26,12 @@ async function fixture(options={}) {
    if(options.remoteError)throw Error('VPS unavailable');
    const agent={name:input.name,relay:'wss://fixture.invalid',pubkey:'a'.repeat(64)};
    saved.push(agent);subscribers.forEach(fn=>fn());return agent;
- },port:async input=>{calls.push(input);if(options.portError)throw Error('Fixture hire failed');saved.push({name:input.name});subscribers.forEach(fn=>fn());return{notes:[]};}},host:{runCommand:async (_,payload)=>{
-   const request=JSON.parse(payload); options.bridgeCalls?.push(request);
+ },port:async input=>{calls.push(input);if(options.portError)throw Error('Fixture hire failed');saved.push({name:input.name});subscribers.forEach(fn=>fn());return{notes:[]};}},host:{runCommand:async (command,payload)=>{
+   const request=JSON.parse(payload);
+   if(command==='server'){ if(!options.server) return null; options.serverCalls?.push(request);
+     if(request.op==='status')return JSON.stringify({protocol:1,community:'wss://fixture.invalid',instructions:true,harnesses:[['codex','Codex']],signedIn:true});
+     return JSON.stringify(request.op==='provision'?{pubkey:'c'.repeat(64)}:request.op==='instructions'?{instructions:'kept'}:{}); }
+   options.bridgeCalls?.push(request);
    const {op}=request;
    if(op==='status')return JSON.stringify({protocol:1,community:'wss://fixture.invalid',creationModels:true,goose:options.gooseConfigured});
    if(op==='creation-models')return JSON.stringify({models:[{id:'opus',title:'Opus'},{id:'sonnet',title:'Sonnet'}]});
@@ -122,6 +126,28 @@ for (const gooseConfigured of [false,true]) test(`Goose registration follows the
      assert.equal(bridgeCalls.at(-1).harness,'goose');
    }
  } finally { f.close(); }
+});
+test('the member\'s own server registers Codex as a remotely run agent type, apart from the VPS types', async()=>{
+ const registered=[], serverCalls=[];
+ const f=await fixture({registered,serverCalls,server:true});
+ try {
+   await wait(()=>registered.some(t=>t.id==='server-codex'));
+   assert.deepEqual(registered.map(t=>t.id).sort(),['server-codex','vps-claude']);
+   const type=registered.find(t=>t.id==='server-codex');
+   assert.equal(type.title,'My server · Codex');
+   assert.match(type.description,/keeps working while this computer is off/);
+   await assert.rejects(async()=>type.remote.provision({community:'wss://other.invalid'}),/different community/);
+   assert.deepEqual(await type.remote.provision({community:'wss://fixture.invalid',name:'Scout',config:{instructions:''}}),{pubkey:'c'.repeat(64)});
+   assert.deepEqual({op:serverCalls.at(-1).op,harness:serverCalls.at(-1).harness,name:serverCalls.at(-1).name},{op:'provision',harness:'codex',name:'Scout'});
+   await type.remote.activate({community:'wss://fixture.invalid',pubkey:'c'.repeat(64),name:'Scout',auth:['auth','a'.repeat(64),'','b'.repeat(128)],config:{instructions:'Be brief.'}});
+   assert.equal(serverCalls.at(-1).op,'activate');
+   assert.equal(await type.remote.instructions.get({community:'wss://fixture.invalid',pubkey:'c'.repeat(64)}),'kept');
+ } finally { f.close(); }
+});
+test('no server types are registered when the member has no server', async()=>{
+ const registered=[];
+ const f=await fixture({registered});
+ try { await new Promise(r=>setTimeout(r,20)); assert.ok(!registered.some(t=>t.id.startsWith('server-'))); } finally { f.close(); }
 });
 for (const harness of ['claude','goose']) for (const remoteError of [false,true]) test(`explicit VPS ${harness} choice (failure=${remoteError})`, async()=>{
  const remote={key:'bravebrand.hire/vps-'+harness,title:'My VPS · '+harness,remote:true};
