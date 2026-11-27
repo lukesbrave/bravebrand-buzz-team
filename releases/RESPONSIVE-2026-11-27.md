@@ -55,3 +55,13 @@ Buzz clients. The layout and Fred naming are the clear standalone general-client
 improvements. Other promotion intent should not be inferred from branch age.
 
 Generated plugin SHA-256: `850d63ed641360a83cc18350c39bc5b8ffb563428539c3ed02a81cda3f50809b`.
+
+## Publication receipt
+
+Published from the clean main checkout on 27 November 2026, commit
+`0d89aa6e73889fe4ca776a640a663929453d7b7d`, on Luke’s explicit instruction.
+A fresh public Git clone with no branch specified returned this commit and all
+four dist files matched the tested release byte for byte. The immutable raw
+plugin matched too. The raw main URL briefly retained the previous CDN-cached
+copy immediately after pushing; Git installation delivered the correct release.
+Existing clients use Check for updates → Update; fresh default installs get it.
