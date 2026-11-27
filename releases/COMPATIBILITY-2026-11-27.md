@@ -54,3 +54,11 @@ for updates → Update. A test install pinned to `codex/client-vps-hiring` must
 switch its source to main; checking for updates on that pilot branch will not
 select the public release. Preserve the existing plugin identity, access and
 employees. The server pilot remains an engineering branch, not the client route.
+
+## Publication receipt
+
+Published from the clean main checkout as
+`552fa30f58027c1d09fe938d0f6cc2742a80910a`, on Luke’s instruction.
+All four live distribution files matched main before publication. All four
+immutable published files and a fresh default-branch Git download matched the
+tested build afterward. No native app restart or employee creation performed.
