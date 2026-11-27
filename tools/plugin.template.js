@@ -529,7 +529,7 @@ function mountSheet(root, { agents, host }) {
       const def = card && card.definition;
       if (!def || typeof def.systemPrompt !== "string" || !def.name) throw new Error("The employee card didn't load. Try again.");
       const firstEver = !SEATS.some(hired);
-      await agents.port({ source: "shared", type: type.key, name: def.name,
+      await agents.port({ source: "shared", type: type.key, name: s === FRED && def.name === "Fred" ? "Fred (Graphic Designer)" : def.name,
         picture: s === FRED ? card.profile.avatarUrl : `${HOME}/art/${AVATARS[s.pack]}`, instructions: def.systemPrompt,
         ...(type.key === claudeKey && typeof def.model === "string" && def.model.trim() ? { config: { ...type.defaults().config, model: def.model } } : {}) });
       if (!alive) return;

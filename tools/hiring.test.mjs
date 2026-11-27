@@ -199,6 +199,7 @@ test('Premium can hire Fred once or recognise the manual import', async()=>{
     await wait(()=>f.calls.length===1);
     assert.equal(f.calls[0].config.model,'claude-opus-5-5');
     assert.equal(f.calls[0].picture,'https://images.example/buzz.png');
+    assert.equal(f.calls[0].name,'Fred (Graphic Designer)');
     assert.equal(f.calls[0].instructions,'Fred instructions');
     button.click();
    }
