@@ -48,9 +48,8 @@ async function fixture(options={}) {
  const hire=async()=>{
    await wait(()=>manifestDone&&root.querySelector('#tier').hidden===false);
    // Wait for manifest continuations to render the seat, rather than using a delay.
-   if(options.mobile&&!options.existing)await wait(()=>root.querySelector('[aria-label^="Digital Home Manager"]').textContent.match(/Employ Me|Hired/));
    root.querySelector('[aria-label^="Digital Home Manager"]').click();
-   if(!options.mobile&&!saved.length){await wait(()=>root.querySelector('[data-hire="architect"]'));root.querySelector('[data-hire="architect"]').click();}
+   if(!saved.length){await wait(()=>root.querySelector('[data-hire="architect"]'));root.querySelector('[data-hire="architect"]').click();}
  };
  const reopen=async()=>{flushSync(()=>reactRoot.render(null));flushSync(()=>reactRoot.render(React.createElement(page.component)));await wait(()=>container.firstChild?.shadowRoot);return container.firstChild.shadowRoot;};
  const replacePlugin=async()=>{

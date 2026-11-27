@@ -27,8 +27,7 @@ css = css.replace("100vh", "var(--bbvh,100vh)")
 css = re.sub(r"\bvideo\b", ".anim", css)
 css = css.replace("#spotlight{position:fixed", "#spotlight{position:absolute")
 css = css.replace("#confetti{position:fixed", "#confetti{position:absolute")
-css = css.replace("@media(max-width:1100px)", "@container bb (max-width:1100px)")
-css = css.replace("@media(max-width:760px)", "@container bb (max-width:760px)")
+css = re.sub(r"@media\(max-width:(\d+)px\)", r"@container bb (max-width:\1px)", css)
 css += """
   .bb-scroll{height:100%;overflow:auto}
   .anim:not([src]){visibility:hidden}
