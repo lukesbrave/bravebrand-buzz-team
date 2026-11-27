@@ -18,21 +18,14 @@ for(const [engine,type] of Object.entries({chromium,webkit})){
   await page.route('https://fixture.invalid/**',r=>r.fulfill({contentType:'text/html',body:'<style>body{margin:0;--surface-popover:#fff;--text-standard:#16314c}@media(prefers-color-scheme:dark){body{--surface-popover:#20252d;--text-standard:#eee}}#host{height:100vh}</style><div id="host"></div>'}));
   await page.goto('https://fixture.invalid/');await page.addScriptTag({content:bundle.outputFiles[0].text});
   await page.locator('[data-seat="architect"]').click();await page.locator('[data-hire="architect"]').click();
-  await page.locator('[data-hire-review]').waitFor();
-  assert.equal(await page.evaluate(()=>window.calls.length),0);
-  assert.ok(await page.locator('#host>div').first().evaluate(el=>el.inert));
-  assert.equal(await page.locator('[data-hire-review] [role="dialog"]').evaluate(el=>{const r=el.getBoundingClientRect();return el.scrollWidth>el.clientWidth+1||r.left<0||r.right>innerWidth;}),false);
-  await page.getByLabel('Model',{exact:true}).selectOption('sonnet');
-  await page.locator('[data-hire-cancel]').click();assert.equal(await page.evaluate(()=>window.calls.length),0);
-  await page.locator('[data-hire="architect"]').click();await page.locator('[data-hire-review]').waitFor();
-  assert.equal(await page.getByLabel('Model',{exact:true}).inputValue(),'opus');
-  await page.getByLabel('Model',{exact:true}).selectOption('sonnet');
-  if(engine==='chromium'&&scheme==='light')await page.screenshot({path:'/tmp/team-hire-review-'+width+'.png'});
-  await page.locator('[data-hire-confirm]').click();
   await page.waitForFunction(()=>window.calls.length===1);
-  const [call]=await page.evaluate(()=>window.calls);
-  assert.equal(call.config.model,'sonnet');assert.equal(call.config.workspace,'kept');assert.equal(call.instructions,'Exact training');
   assert.equal(await page.locator('[data-hire-review]').count(),0);
+  assert.equal(await page.getByLabel('Model',{exact:true}).count(),0);
+  const [call]=await page.evaluate(()=>window.calls);
+  assert.equal(call.config.model,'opus');assert.equal(call.config.workspace,'kept');assert.equal(call.instructions,'Exact training');
+  await page.locator('[data-seat="architect"]').click();
+  assert.equal(await page.locator('[data-hire="architect"]').count(),0);
+  assert.equal(await page.evaluate(()=>window.calls.length),1);
   passed++;await page.close();
  }}finally{await browser.close();}
 }

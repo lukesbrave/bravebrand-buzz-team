@@ -14,7 +14,8 @@ Connect Goose, Claude or Codex in **Settings → Agent setup** before recruiting
 same plugin. Membership access links are provided separately in the classroom.
 
 The same public plugin works in ordinary Buzz and Digital Home Workrooms.
-Hiring opens a review with the model controls provided by your agent setup.
+Hiring uses the agent card’s model for Claude and your configured defaults for
+Goose or Codex, without an extra model-selection step.
 Use the default branch; the server pilot branch is not the client install.
 
 ## Already installed?
