@@ -137,7 +137,7 @@ function loadFonts() {
 }
 
 // The team sheet's behaviour, scoped to one shadow root. Returns its cleanup.
-function mountSheet(root, { agents, host }) {
+function mountSheet(root, { agents, host, reviewHire }) {
   const $ = (sel) => root.querySelector(sel);
   const shell = $(".bb-root");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -529,9 +529,18 @@ function mountSheet(root, { agents, host }) {
       const def = card && card.definition;
       if (!def || typeof def.systemPrompt !== "string" || !def.name) throw new Error("The employee card didn't load. Try again.");
       const firstEver = !SEATS.some(hired);
-      await agents.port({ source: "shared", type: type.key, name: s === FRED && def.name === "Fred" ? "Fred (Graphic Designer)" : def.name,
+      const name = s === FRED && def.name === "Fred" ? "Fred (Graphic Designer)" : def.name;
+      const preset = type.key === claudeKey && typeof def.model === "string" && def.model.trim()
+        ? { ...type.defaults().config, model: def.model } : type.defaults?.().config;
+      closeSpot();
+      const choice = await reviewHire({ type, name, preset });
+      if (!alive) return;
+      if (!choice) { hiring = null; openSpot(s); return; }
+      if (key !== hireKey || hired(s) || !hireTypes().some(t => t.key === type.key))
+        throw new Error("Your access or agent setup changed. Reopen the card and try again.");
+      await agents.port({ source: "shared", type: type.key, name,
         picture: s === FRED ? card.profile.avatarUrl : `${HOME}/art/${AVATARS[s.pack]}`, instructions: def.systemPrompt,
-        ...(type.key === claudeKey && typeof def.model === "string" && def.model.trim() ? { config: { ...type.defaults().config, model: def.model } } : {}) });
+        ...(choice.config !== undefined ? { config: choice.config } : {}) });
       if (!alive) return;
       hiring = null;
       if (open) closeSpot();
@@ -619,8 +628,65 @@ const AVATARS = {
   "blaze": "blaze-avatar.png",
 };
 
+// Use the provider-owned creation controls shared by ordinary Buzz and Workrooms.
+// Do not require the private Workrooms-only bravebrandAgentControls service.
+function createHiringReview(React) {
+  const h = React.createElement;
+  class ModelBoundary extends React.Component {
+    state = { failed: false };
+    static getDerivedStateFromError() { return { failed: true }; }
+    componentDidCatch() { this.props.onFailure(); }
+    render() { return this.state.failed
+      ? h("p", {role:"alert"}, "The model controls couldn't load. Cancel and check Agent setup in Buzz, then try again.")
+      : this.props.children; }
+  }
+  return function HiringReview({ type, name, preset, onFinish, background }) {
+    const [config,setConfig] = React.useState(() => preset === undefined ? undefined : structuredClone(preset));
+    const [ready,setReady] = React.useState(false);
+    const [failed,setFailed] = React.useState(false);
+    const panel = React.useRef(null), finished = React.useRef(false);
+    const Configuration = type.CreateConfiguration, Model = type.CreateModel;
+    const waitsForReady = !!Configuration || (!!Model && type.createModelReportsReadiness === true);
+    const finish = choice => { if (!finished.current) { finished.current = true; onFinish(choice); } };
+    React.useEffect(() => {
+      const previous = document.activeElement;
+      if (background.current) background.current.inert = true;
+      panel.current?.querySelector("button")?.focus();
+      return () => {
+        if (background.current) background.current.inert = false;
+        if (previous?.isConnected) previous.focus();
+      };
+    }, []);
+    const keydown = e => {
+      if (e.defaultPrevented) return;
+      if (e.key === "Escape") { e.preventDefault(); finish(null); }
+      if (e.key !== "Tab") return;
+      const nodes = [...panel.current.querySelectorAll('button:not(:disabled),select:not(:disabled),input:not(:disabled),[tabindex="0"]')]
+        .filter(el => el.getClientRects().length);
+      if (!nodes.length) return;
+      const first=nodes[0], last=nodes[nodes.length-1];
+      if (e.shiftKey && document.activeElement===first) {e.preventDefault();last.focus();}
+      else if (!e.shiftKey && document.activeElement===last) {e.preventDefault();first.focus();}
+    };
+    const row = h("p", {style:{margin:"0 0 16px",opacity:.75}}, "Agent setup: " + type.title);
+    const props = {config,disabled:false,onChange:setConfig,onReadyChange:setReady};
+    return h("div", {"data-hire-review":"",onKeyDown:keydown,style:{position:"fixed",inset:0,boxSizing:"border-box",fontFamily:"-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif",zIndex:"var(--layer-dialog,1000)",background:"#0008",display:"grid",placeItems:"center",padding:16}},
+      h("section", {ref:panel,role:"dialog","aria-modal":true,"aria-labelledby":"bb-hire-title",style:{boxSizing:"border-box",width:"min(100%,480px)",maxHeight:"calc(100dvh - 32px)",overflowY:"auto",padding:24,borderRadius:18,background:"var(--surface-popover,#fff)",color:"var(--text-standard,#16314c)",boxShadow:"0 20px 80px #0004"}},
+        h("h2", {id:"bb-hire-title",style:{fontSize:22,margin:"0 0 8px"}}, "Hire " + name),
+        h("p", {style:{margin:"0 0 20px"}}, "Review your agent setup before hiring. BraveBrand training is included."),
+        h(ModelBoundary, {onFailure:()=>setFailed(true)},
+          Configuration ? h(Configuration,{...props,harnessControl:row}) : h(React.Fragment,null,row,
+            Model ? h("div",null,h("p",{style:{fontWeight:600}},"Model"),h(Model,props))
+              : h("p",null,"Uses your configured model. You can change it in the agent’s settings after hiring."))),
+        h("div",{style:{display:"flex",justifyContent:"flex-end",gap:12,marginTop:24}},
+          h("button",{type:"button","data-hire-cancel":"",onClick:()=>finish(null),style:{padding:"10px 18px",borderRadius:8,border:"1px solid #a8b5c0",background:"transparent",color:"inherit"}},"Cancel"),
+          h("button",{type:"button","data-hire-confirm":"",disabled:failed||(waitsForReady&&!ready),onClick:()=>finish({config}),style:{padding:"10px 18px",borderRadius:8,border:0,background:"#16314c",color:"#fff"}},"Hire agent"))));
+  };
+}
+
 export function apply(ctx) {
   const React = ctx.react;
+  const HiringReview = createHiringReview(React);
   loadFonts();
   ctx.pages.register({
     id: "main",
@@ -630,13 +696,20 @@ export function apply(ctx) {
     icon: ICON,
     component: function Team() {
       const ref = React.useRef(null);
+      const [review,setReview] = React.useState(null);
+      const pending = React.useRef(null);
+      const finish = choice => { pending.current?.(choice); pending.current=null; setReview(null); };
       React.useEffect(() => {
         const node = ref.current;
         const root = node.shadowRoot || node.attachShadow({ mode: "open" });
         root.innerHTML = `<style>${CSS}</style>${MARKUP}`;
-        return mountSheet(root, { agents: ctx.agents, host: ctx.host });
+        const cleanup = mountSheet(root, { agents: ctx.agents, host: ctx.host,
+          reviewHire: props => new Promise(resolve => { pending.current=resolve; setReview(props); }) });
+        return () => { cleanup(); pending.current?.(null); pending.current=null; };
       }, []);
-      return React.createElement("div", { ref, style: { height: "100%", minHeight: 0, flex: 1 } });
+      return React.createElement(React.Fragment,null,
+        React.createElement("div", { ref, style: { height: "100%", minHeight: 0, flex: 1 } }),
+        review && React.createElement(HiringReview,{...review,background:ref,onFinish:finish}));
     },
   });
 }

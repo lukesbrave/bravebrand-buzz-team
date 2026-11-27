@@ -39,17 +39,20 @@ async function fixture(options={}) {
    if(path.endsWith('/manifest.json')){manifestDone=true;return{status:200,body:JSON.stringify({card:'builder.agent.json',display:path.includes('/blaze/')?'Blaze (Video Editor)':card.definition.name})};}
    return{status:200,body:JSON.stringify(card)};
  }}};
+ Object.defineProperty(ctx,'bravebrandAgentControls',{get(){throw Error('Private '+(options.app||'Buzz')+' controls must not be requested');}});
  localStorage.setItem('bravebrand.team.key','1'.repeat(24));
  const mod=await import('data:text/javascript;base64,'+Buffer.from((options.source ?? source)+'\n// '+Math.random()).toString('base64'));mod.apply(ctx);
  const container=document.createElement('div');document.body.append(container);const reactRoot=createRoot(container);
  flushSync(()=>reactRoot.render(React.createElement(page.component)));
  await wait(()=>container.firstChild?.shadowRoot);const root=container.firstChild.shadowRoot;
  const close=()=>{flushSync(()=>reactRoot.unmount());window.happyDOM.abort();window.close();};
+ const confirm=async()=>{await wait(()=>document.querySelector('[data-hire-confirm]'));document.querySelector('[data-hire-confirm]').click();};
  const hire=async()=>{
    await wait(()=>manifestDone&&root.querySelector('#tier').hidden===false);
    // Wait for manifest continuations to render the seat, rather than using a delay.
    root.querySelector('[aria-label^="Digital Home Manager"]').click();
-   if(!saved.length){await wait(()=>root.querySelector('[data-hire="architect"]'));root.querySelector('[data-hire="architect"]').click();}
+   if(!saved.length){await wait(()=>root.querySelector('[data-hire="architect"]'));root.querySelector('[data-hire="architect"]').click();
+     if(options.autoConfirm!==false && (options.types??[claude]).some(t=>!t.remote&&['buzz.claude-code/claude-code','buzz.goose/goose','buzz.codex/codex'].includes(t.key)))await confirm();}
  };
  const reopen=async()=>{flushSync(()=>reactRoot.render(null));flushSync(()=>reactRoot.render(React.createElement(page.component)));await wait(()=>container.firstChild?.shadowRoot);return container.firstChild.shadowRoot;};
  const replacePlugin=async()=>{
@@ -58,7 +61,7 @@ async function fixture(options={}) {
    next.apply(ctx);
    return reopen();
  };
- return{root,calls,card,hire,close,reopen,replacePlugin,requests:()=>requests};
+ return{root,calls,card,hire,confirm,close,reopen,replacePlugin,requests:()=>requests};
 }
 for(const mobile of [false,true]) {
  for(const tier of ['standard','premium'])test(`${mobile?'narrow':'wide'} ${tier}: exact instructions and Opus, then no duplicate`,async()=>{
@@ -80,7 +83,7 @@ for(const mobile of [false,true]) {
      await wait(()=>f.root.querySelector('#tier').hidden===false);
      f.root.querySelector('[aria-label^="Digital Home Manager"]').click();
      await wait(()=>f.root.querySelector('[data-type="buzz.goose/goose"]'));
-     assert.equal(f.calls.length,0);f.root.querySelector('[data-type="buzz.goose/goose"]').click();
+     assert.equal(f.calls.length,0);f.root.querySelector('[data-type="buzz.goose/goose"]').click();await f.confirm();
      await wait(()=>f.calls.length===1);assert.equal(f.calls[0].type,goose.key);assert.equal(Object.hasOwn(f.calls[0],'config'),false);
    }finally{f.close();}
  });
@@ -117,7 +120,7 @@ for(const mobile of [false,true])test(`${mobile?'narrow':'wide'}: Standard to Pr
   assert.equal(f.root.querySelector('#tiername').textContent,'Premium');
   assert.equal(localStorage.getItem('bravebrand.team.key'),'2'.repeat(24));
   assert.equal(f.calls.length,0,'Switching access must not create or update any employee');
-  f.root.querySelector('[data-hire="content"]').click();
+  f.root.querySelector('[data-hire="content"]').click();await f.confirm();
   await wait(()=>f.calls.length===1);
   assert.equal(f.calls[0].name,'Bob — Content Manager');
   assert.equal(f.calls[0].instructions,f.card.definition.systemPrompt);
@@ -195,7 +198,7 @@ test('Premium can hire Fred once or recognise the manual import', async()=>{
    button.click();
    if(!names.length){
     await wait(()=>f.root.querySelector('[data-hire="fred"]'));
-    f.root.querySelector('[data-hire="fred"]').click();
+    f.root.querySelector('[data-hire="fred"]').click();await f.confirm();
     await wait(()=>f.calls.length===1);
     assert.equal(f.calls[0].config.model,'claude-opus-5-5');
     assert.equal(f.calls[0].picture,'https://images.example/buzz.png');
@@ -223,4 +226,53 @@ test('Standard has no Fred hire action',async()=>{
   assert.equal(f.root.querySelector('#spot-name').textContent,'Graphic Designer');
   assert.equal(f.root.querySelector('[data-hire="fred"]'),null);
  } finally {f.close();}
+});
+
+for (const app of ['Buzz','Workrooms']) test(`${app}: provider model selection reaches the hire without losing training or defaults`,async()=>{
+ const Model=({config,onChange})=>React.createElement('button',{'data-model-choice':'',onClick:()=>onChange({...config,model:'chosen-model'})},'Choose model');
+ const f=await fixture({autoConfirm:false,types:[{...claude,CreateModel:Model}],app});
+ try {
+  await f.hire();await wait(()=>document.querySelector('[data-model-choice]'));
+  assert.equal(f.calls.length,0,'Opening the review must not hire');
+  document.querySelector('[data-model-choice]').click();
+  await f.confirm();await wait(()=>f.calls.length===1);
+  assert.deepEqual(f.calls[0].config,{...defaults,model:'chosen-model'});
+  assert.equal(f.calls[0].instructions,f.card.definition.systemPrompt);
+  assert.equal(defaults.model,'');
+ }finally{f.close();}
+});
+test('cancel and retry do not create an agent until confirmed',async()=>{
+ const f=await fixture({autoConfirm:false});
+ try{
+  await f.hire();await wait(()=>document.querySelector('[data-hire-cancel]'));
+  document.querySelector('[data-hire-cancel]').click();
+  await wait(()=>!document.querySelector('[data-hire-review]'));
+  assert.equal(f.calls.length,0);assert.ok(f.root.querySelector('#spotlight').classList.contains('open'));
+  await f.hire();await f.confirm();await wait(()=>f.calls.length===1);
+ }finally{f.close();}
+});
+test('provider readiness blocks hiring until a usable configuration is selected',async()=>{
+ const Configuration=({config,onChange,onReadyChange})=>React.createElement('button',{'data-ready-model':'',onClick:()=>{onChange({...config,model:'ready-model'});onReadyChange(true);}},'Connect model');
+ const f=await fixture({autoConfirm:false,types:[{...claude,CreateConfiguration:Configuration}]});
+ try{
+  await f.hire();await wait(()=>document.querySelector('[data-hire-confirm]'));
+  assert.equal(document.querySelector('[data-hire-confirm]').disabled,true);
+  document.querySelector('[data-hire-confirm]').click();assert.equal(f.calls.length,0);
+  document.querySelector('[data-ready-model]').click();
+  await wait(()=>!document.querySelector('[data-hire-confirm]').disabled);
+  await f.confirm();await wait(()=>f.calls.length===1);assert.equal(f.calls[0].config.model,'ready-model');
+ }finally{f.close();}
+});
+test('removing the local provider during review refuses the hire',async()=>{
+ const types=[claude];const f=await fixture({autoConfirm:false,types});
+ try{
+  await f.hire();await wait(()=>document.querySelector('[data-hire-confirm]'));types.splice(0);
+  await f.confirm();await wait(()=>f.root.querySelector('#spot-act').textContent.includes('setup changed'));
+  assert.equal(f.calls.length,0);
+ }finally{f.close();}
+});
+test('closing the page while reviewing never imports an agent',async()=>{
+ const f=await fixture({autoConfirm:false});
+ await f.hire();await wait(()=>document.querySelector('[data-hire-confirm]'));f.close();
+ await new Promise(resolve=>setTimeout(resolve,20));assert.equal(f.calls.length,0);
 });
