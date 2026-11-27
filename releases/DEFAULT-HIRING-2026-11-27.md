@@ -34,3 +34,10 @@ Generated plugin SHA-256:
 
 Client route remains the same repository, default/main branch, dist folder.
 Existing main installs: Check for updates → Update.
+
+## Publication receipt
+
+Published from clean main as `1e0c60388bbfb2faead31943aaf9a7afd9b668d3` on
+27 November 2026, on Luke’s request. All four live dist files matched main
+before publication. Immutable published files and a fresh default-branch Git
+download matched all four tested dist files after publication.
